@@ -1,0 +1,29 @@
+{
+  "id": "wet",
+  "nameKey": "pitch.wet",
+  "surface": "wet",
+  "length": 105.0,
+  "width": 68.0,
+  "goalWidth": 7.32,
+  "goalHeight": 2.44,
+  "goalDepth": 2.0,
+  "postRadius": 0.06,
+  "penaltyAreaDepth": 16.5,
+  "penaltyAreaWidth": 40.32,
+  "goalAreaDepth": 5.5,
+  "goalAreaWidth": 18.32,
+  "penaltySpotDistance": 11.0,
+  "centreCircleRadius": 9.15,
+  "cornerArcRadius": 1.0,
+  "lineWidth": 0.12,
+  "boundaryMargin": 6.0,
+  "visual": {
+    "grassTexture": "pitch.grass.wet",
+    "surroundTexture": "pitch.surround",
+    "stripeWidth": 5.25,
+    "stripeShade": 0.9,
+    "lineColor": "#EEF2EE",
+    "goalColor": "#F8F8F8",
+    "netTexture": "goal.net"
+  }
+}

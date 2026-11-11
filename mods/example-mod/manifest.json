@@ -1,0 +1,8 @@
+{
+  "id": "example-mod",
+  "name": "Neon Night (example mod)",
+  "version": "1.0.0",
+  "formatVersion": 1,
+  "description": "Demonstration mod: neon pitch, golden ball, renamed and recoloured team, livelier ball, translated strings.",
+  "authors": ["Arcade Football project"]
+}

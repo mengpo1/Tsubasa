@@ -1,0 +1,85 @@
+{
+  "textures": {
+    "player.sheet": "assets/textures/player.png",
+    "ball.default": "assets/textures/ball.png",
+    "shadow.default": "assets/textures/shadow.png",
+    "goal.net": "assets/textures/net.png",
+    "ui.selection": "assets/textures/selection.png",
+    "pitch.surround": "assets/textures/surround.png",
+    "pitch.grass.normal": "assets/textures/grass_normal.png",
+    "pitch.grass.wet": "assets/textures/grass_wet.png",
+    "pitch.grass.soggy": "assets/textures/grass_soggy.png",
+    "pitch.grass.artificial": "assets/textures/grass_artificial.png",
+    "pitch.grass.icy": "assets/textures/grass_icy.png",
+    "pitch.grass.muddy": "assets/textures/grass_muddy.png",
+    "pitch.grass.bumpy": "assets/textures/grass_bumpy.png"
+  },
+  "fonts": {
+    "ui.default": "assets/fonts/DejaVuSans.ttf",
+    "ui.bold": "assets/fonts/DejaVuSans-Bold.ttf"
+  },
+  "animations": {
+    "player.idle": {
+      "texture": "player.sheet",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "directions": 8,
+      "frames": [0],
+      "frameDuration": 1.0,
+      "anchor": [16, 29],
+      "palette": [
+        { "marker": "#FF0000", "slot": "shirt" },
+        { "marker": "#C00000", "slot": "shirt", "brightness": 0.72 },
+        { "marker": "#0000FF", "slot": "shorts" },
+        { "marker": "#0000C0", "slot": "shorts", "brightness": 0.72 },
+        { "marker": "#00FF00", "slot": "socks" },
+        { "marker": "#00C000", "slot": "socks", "brightness": 0.72 }
+      ]
+    },
+    "player.run": {
+      "texture": "player.sheet",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "directions": 8,
+      "frames": [1, 2, 3, 4, 5, 6],
+      "frameDuration": 0.065,
+      "referenceSpeed": 8.0,
+      "anchor": [16, 29],
+      "palette": [
+        { "marker": "#FF0000", "slot": "shirt" },
+        { "marker": "#C00000", "slot": "shirt", "brightness": 0.72 },
+        { "marker": "#0000FF", "slot": "shorts" },
+        { "marker": "#0000C0", "slot": "shorts", "brightness": 0.72 },
+        { "marker": "#00FF00", "slot": "socks" },
+        { "marker": "#00C000", "slot": "socks", "brightness": 0.72 }
+      ]
+    },
+    "player.kick": {
+      "texture": "player.sheet",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "directions": 8,
+      "frames": [7],
+      "frameDuration": 0.25,
+      "anchor": [16, 29],
+      "palette": [
+        { "marker": "#FF0000", "slot": "shirt" },
+        { "marker": "#C00000", "slot": "shirt", "brightness": 0.72 },
+        { "marker": "#0000FF", "slot": "shorts" },
+        { "marker": "#0000C0", "slot": "shorts", "brightness": 0.72 },
+        { "marker": "#00FF00", "slot": "socks" },
+        { "marker": "#00C000", "slot": "socks", "brightness": 0.72 }
+      ]
+    },
+    "ball.roll": {
+      "texture": "ball.default",
+      "frameWidth": 7,
+      "frameHeight": 7,
+      "directions": 1,
+      "frames": [0, 1, 2, 3],
+      "frameDuration": 0.05,
+      "referenceSpeed": 4.0,
+      "anchor": [3, 3]
+    }
+  }
+}

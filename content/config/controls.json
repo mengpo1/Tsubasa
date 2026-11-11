@@ -1,0 +1,60 @@
+{
+  // One-button contextual controls. Timings in seconds, distances in metres, speeds in m/s.
+  "contact": {
+    "footRadius": 0.55,
+    "footHeight": 0.45,
+    "bodyRadius": 0.4,
+    "bodyHeight": 1.9,
+    "touchCooldown": 0.15
+  },
+  "dribble": {
+    "baseSpeed": 1.2,
+    "runFactor": 1.12,
+    "maxRelativeSpeed": 9.5,
+    "frontDot": -0.2
+  },
+  "deflection": {
+    "restitution": 0.35,
+    "tangentialKeep": 0.7
+  },
+  "shot": {
+    "window": 0.3,
+    "reach": 1.7,
+    "maxBallHeight": 0.8,
+    "baseSpeed": 22.0,
+    "runFactor": 0.5,
+    "lift": 4.0
+  },
+  "trap": {
+    "maxBallHeight": 1.3,
+    "maxRelativeSpeed": 30.0,
+    "holdDistance": 0.4,
+    "holdGain": 10.0,
+    "maxHoldSpeed": 6.0,
+    "loseDistance": 1.6
+  },
+  "pass": {
+    "minSpeed": 9.0,
+    "maxSpeed": 24.0,
+    "chargeTime": 0.6,
+    "lift": 0.0
+  },
+  "chip": {
+    "reach": 1.6,
+    "possessionWindow": 0.7,
+    "reversalDot": -0.69,
+    "reversalWindow": 0.12,
+    "speed": 9.0,
+    "lift": 7.0
+  },
+  "aftertouch": {
+    "enabled": true,
+    "duration": 0.55,
+    "curlAcceleration": 11.0,
+    "dipAcceleration": 0.0,
+    "liftAcceleration": 0.0,
+    "shotScale": 1.0,
+    "passScale": 0.6,
+    "chipScale": 0.8
+  }
+}

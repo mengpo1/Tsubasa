@@ -1,0 +1,6 @@
+{
+  // A livelier ball: it rolls further than in the base game (base value: 1.4).
+  "ball": {
+    "rollingResistance": 0.9
+  }
+}

@@ -1,0 +1,39 @@
+{
+  // Key names: Microsoft.Xna.Framework.Input.Keys; button names: Microsoft.Xna.Framework.Input.Buttons.
+  "players": [
+    {
+      "up": ["Up"],
+      "down": ["Down"],
+      "left": ["Left"],
+      "right": ["Right"],
+      "fire": ["Space", "RightControl"],
+      "gamepad": 0,
+      "gamepadFire": ["A", "B"]
+    },
+    {
+      "up": ["W"],
+      "down": ["S"],
+      "left": ["A"],
+      "right": ["D"],
+      "fire": ["LeftShift", "Q"],
+      "gamepad": 1,
+      "gamepadFire": ["A", "B"]
+    }
+  ],
+  "gamepadDeadZone": 0.35,
+  "system": {
+    "quit": ["Escape"],
+    "pause": ["P"],
+    "debug": ["F1"],
+    "reload": ["F5"],
+    "toggleMods": ["F6"],
+    "resetBall": ["R"],
+    "toggleAftertouch": ["T"],
+    "nextPitch": ["F3"],
+    "nextLanguage": ["F7"],
+    "toggleRadar": ["X"],
+    "zoomIn": ["OemCloseBrackets"],
+    "zoomOut": ["OemOpenBrackets"],
+    "fullscreen": ["F11"]
+  }
+}

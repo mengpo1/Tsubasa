@@ -1,0 +1,7 @@
+{
+  // Only the changed values are written: they are merged over content/pitches/normal.json.
+  "visual": {
+    "lineColor": "#7CFFF0",
+    "stripeShade": 0.8
+  }
+}

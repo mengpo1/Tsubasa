@@ -1,0 +1,13 @@
+{
+  "id": "bumpy",
+  "nameKey": "surface.bumpy",
+  "rollingResistanceScale": 1.0,
+  "rollingDragScale": 1.0,
+  "bounceRestitutionScale": 1.05,
+  "bounceFrictionScale": 1.0,
+  "airDragScale": 1.0,
+  "bounceDeviationDegrees": 25,
+  "rollingDeviationDegreesPerMetre": 1.5,
+  "staminaDrainScale": 1.0,
+  "playerGripScale": 1.0
+}

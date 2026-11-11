@@ -1,0 +1,13 @@
+{
+  "id": "wet",
+  "nameKey": "surface.wet",
+  "rollingResistanceScale": 0.7,
+  "rollingDragScale": 0.8,
+  "bounceRestitutionScale": 0.9,
+  "bounceFrictionScale": 1.08,
+  "airDragScale": 1.0,
+  "bounceDeviationDegrees": 0,
+  "rollingDeviationDegreesPerMetre": 0,
+  "staminaDrainScale": 1.1,
+  "playerGripScale": 0.9
+}

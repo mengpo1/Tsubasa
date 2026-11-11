@@ -1,0 +1,13 @@
+{
+  "id": "icy",
+  "nameKey": "surface.icy",
+  "rollingResistanceScale": 0.35,
+  "rollingDragScale": 0.6,
+  "bounceRestitutionScale": 1.0,
+  "bounceFrictionScale": 1.1,
+  "airDragScale": 1.0,
+  "bounceDeviationDegrees": 0,
+  "rollingDeviationDegreesPerMetre": 0,
+  "staminaDrainScale": 1.0,
+  "playerGripScale": 0.55
+}

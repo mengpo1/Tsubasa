@@ -1,0 +1,9 @@
+{
+  "name": "Neon Rangers",
+  "shortName": "NEO",
+  "kit": {
+    "shirt": "#18D8C8",
+    "shorts": "#2A1E5C",
+    "socks": "#F040A0"
+  }
+}
