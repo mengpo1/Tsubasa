@@ -1,0 +1,16 @@
+{
+  // Match flow timings, in real seconds of simulation. Kick Off 2 offered halves of 3, 5, 10 and 20 minutes.
+  "id": "classic",
+  "nameKey": "ruleset.classic",
+  "halfLengthSeconds": 180,
+  "displayedHalfMinutes": 45,
+  "goalCelebrationSeconds": 3.0,
+  "ballOutWhistleSeconds": 0.8,
+  "halfTimeSeconds": 3.0,
+  "kickOffSetupSeconds": 3.0,
+  "restartSetupSeconds": 3.0,
+  "humanRestartAutoSeconds": 4.0,
+  "restartDistance": 9.15,
+  "throwInDistance": 3.0,
+  "switchEnds": true
+}

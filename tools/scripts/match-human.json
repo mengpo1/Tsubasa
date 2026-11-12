@@ -1,0 +1,10 @@
+{
+  "steps": [
+    { "from": 0, "to": 30, "direction": "none" },
+    { "from": 30, "to": 60, "direction": "upRight", "fire": true },
+    { "from": 60, "to": 62, "direction": "upRight" },
+    { "from": 62, "to": 400, "direction": "up" },
+    { "from": 400, "to": 430, "direction": "up", "fire": true },
+    { "from": 430, "to": 800, "direction": "upLeft" }
+  ]
+}

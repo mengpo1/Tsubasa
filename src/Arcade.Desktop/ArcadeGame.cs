@@ -2,6 +2,8 @@ using System.Diagnostics;
 using Arcade.Core.Common;
 using Arcade.Core.Content;
 using Arcade.Core.Football;
+using Arcade.Core.Football.Control;
+using Arcade.Core.Football.Match;
 using Arcade.Core.Input;
 using Arcade.Core.Simulation;
 using Arcade.Desktop.Camera;
@@ -27,6 +29,8 @@ internal sealed class ArcadeGame : Game
     private const ulong Seed = 20240611;
     private const float NoticeSeconds = 3f;
 
+    private static readonly SystemAction[] SceneActions = [SystemAction.ResetBall, SystemAction.ToggleAftertouch, SystemAction.NextPitch];
+
     private readonly GraphicsDeviceManager _graphics;
     private readonly LaunchOptions _options;
     private readonly string _gameRoot;
@@ -46,8 +50,8 @@ internal sealed class ArcadeGame : Game
     private Camera2D _camera = null!;
     private PitchRenderer _pitchRenderer = null!;
     private WorldRenderer _worldRenderer = null!;
-    private TrainingHud _hud = null!;
-    private TrainingScene _scene = null!;
+    private IGameScene _scene = null!;
+    private ControlInput[] _inputs = [];
     private FixedStepClock _clock = null!;
     private SpriteBatch _batch = null!;
     private RenderTarget2D _worldTarget = null!;
@@ -68,6 +72,7 @@ internal sealed class ArcadeGame : Game
         _configuredMods = options.Mods ?? settings.Mods;
         _modsEnabled = !options.NoMods;
         _captureTicks = [.. options.CaptureTicks];
+        _debug.Enabled = options.Debug;
         if (options.ScriptPath is not null)
         {
             _script = ScriptedInput.Load(options.ScriptPath);
@@ -104,8 +109,18 @@ internal sealed class ArcadeGame : Game
         for (int i = 0; i < steps; i++)
         {
             FootballWorld world = _scene.World;
-            ControlInput control = _script?.At(world.Tick) ?? _input.ReadControl(0);
-            _scene.Step(control);
+            for (int set = 0; set < _inputs.Length; set++)
+            {
+                _inputs[set] = _input.ReadControl(set);
+            }
+
+            if (_script is not null)
+            {
+                _inputs[0] = _script.At(world.Tick);
+            }
+
+            _scene.Step(_inputs);
+            world = _scene.World;
             DrainEvents(world);
             if (_captureTicks.Contains(world.Tick))
             {
@@ -115,7 +130,7 @@ internal sealed class ArcadeGame : Game
 
         _simulationWatch.Stop();
         _debug.RecordFrame(frameSeconds, _simulationWatch.Elapsed.TotalMilliseconds);
-        _hud.Update((float)frameSeconds);
+        _scene.UpdateHud((float)frameSeconds);
         _transientNoticeTime = MathF.Max(0f, _transientNoticeTime - (float)frameSeconds);
         UpdateCamera((float)frameSeconds);
 
@@ -137,11 +152,9 @@ internal sealed class ArcadeGame : Game
         GraphicsDevice.Clear(Color.Black);
         _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointWrap, DepthStencilState.None, RasterizerState.CullNone);
         _pitchRenderer.Draw(_batch, _textures, world.Pitch, view);
-        float? charge = _scene.Session.Controller.Phase == Core.Football.Control.ControlPhase.Holding && _scene.Session.Controller.AimSeconds > 0f
-            ? _scene.Session.Controller.AimSeconds / MathF.Max(0.01f, world.Controls.Pass.ChargeTime)
-            : null;
-        _worldRenderer.Draw(_batch, _textures, world, _scene.Kits, _scene.Session.Player, alpha, view, charge);
-        _debug.DrawWorld(_batch, _textures.Pixel, world, _scene.Session.Controller, alpha, view);
+        _worldRenderer.Draw(_batch, _textures, world, _scene.Kits, _scene.Controllers, alpha, view);
+        ContextualController? primary = _scene.Controllers.Count > 0 ? _scene.Controllers[0] : null;
+        _debug.DrawWorld(_batch, _textures.Pixel, world, primary, _scene.Match, alpha, view);
         _batch.End();
 
         EnsureFrameTarget();
@@ -164,11 +177,13 @@ internal sealed class ArcadeGame : Game
             Radar.Draw(_batch, _textures.Pixel, world, _scene.Kits, area, _data.Display.Radar.Opacity, view);
         }
 
-        _hud.Draw(_batch, _textures.Pixel, _scene.Session, screen, ui, CurrentNotices());
-        _debug.DrawText(_batch, _textures.Pixel, _fonts.Regular(6.5f * ui), world, _scene.Session.Controller, _data.PackIds, 8f * ui, 40f * ui);
+        _scene.DrawHud(_batch, _textures.Pixel, screen, ui, CurrentNotices());
+        float pixelScale = destination.Width / (float)_data.Display.VirtualWidth;
+        _debug.DrawAiLabels(_batch, _fonts.Regular(5.5f * ui), _scene.Match, view, v => new Vector2(destination.X + (v.X * pixelScale), destination.Y + (v.Y * pixelScale)));
+        _debug.DrawText(_batch, _textures.Pixel, _fonts.Regular(6.5f * ui), world, primary, _scene.Match, _data.PackIds, 8f * ui, 40f * ui);
         if (_clock.Paused)
         {
-            _hud.DrawPaused(_batch, _textures.Pixel, screen, ui);
+            HudCommon.DrawPaused(_batch, _textures.Pixel, _fonts, _data.Localizer, screen, ui);
         }
 
         _batch.End();
@@ -209,24 +224,37 @@ internal sealed class ArcadeGame : Game
             ? []
             : _configuredMods.Count > 0 || initial ? _configuredMods : ContentLoader.ListInstalledMods(_gameRoot);
         GameData data = GameData.Load(_gameRoot, mods, _options.Language ?? language, _log);
-        string pitch = _scene?.PitchId ?? _options.Pitch ?? DefaultPitch;
+        string pitch = (_scene as TrainingScene)?.PitchId ?? _options.Pitch ?? DefaultPitch;
         if (!data.Football.Pitches.ContainsKey(pitch))
         {
             pitch = DefaultPitch;
         }
 
-        var scene = new TrainingScene(data.Football, _options.Team ?? DefaultTeam, pitch, _settings.Aftertouch ?? data.Football.Controls.Aftertouch.Enabled, Seed);
+        var fonts = new FontSet(data.Repository, data.Assets);
+        bool aftertouch = _settings.Aftertouch ?? data.Football.Controls.Aftertouch.Enabled;
+        IGameScene scene;
+        try
+        {
+            scene = _options.Mode == "training"
+                ? new TrainingScene(data.Football, _options.Team ?? DefaultTeam, pitch, aftertouch, Seed, data.Localizer, fonts)
+                : new MatchScene(data.Football, CreateMatchSettings(pitch, aftertouch), data.Localizer, fonts);
+        }
+        catch
+        {
+            fonts.Dispose();
+            throw;
+        }
 
         _textures?.Dispose();
         _fonts?.Dispose();
         _data = data;
         _textures = new TextureStore(GraphicsDevice, data.Repository, data.Assets, _log);
-        _fonts = new FontSet(data.Repository, data.Assets);
+        _fonts = fonts;
         _input = new InputSampler(data.Input);
+        _inputs = new ControlInput[_input.ControlSets];
         _camera = new Camera2D(data.Display.Camera);
         _pitchRenderer = new PitchRenderer(data.Display.PixelsPerMetre);
         _worldRenderer = new WorldRenderer(data.Display.PixelsPerMetre);
-        _hud = new TrainingHud(data.Localizer, _fonts);
         _scene = scene;
         _clock = new FixedStepClock(data.Football.Physics.StepsPerSecond);
         _radarVisible = data.Display.Radar.Visible;
@@ -250,6 +278,27 @@ internal sealed class ArcadeGame : Game
         }
 
         Window.Title = data.Localizer.Get("app.title");
+    }
+
+    private MatchSettings CreateMatchSettings(string pitch, bool aftertouch)
+    {
+        HumanSlot[] humans = _options.Players switch
+        {
+            0 => [],
+            2 => [new HumanSlot(0, 0), new HumanSlot(1, 1)],
+            _ => [new HumanSlot(0, 0)],
+        };
+        return new MatchSettings
+        {
+            HomeTeamId = _options.Home,
+            AwayTeamId = _options.Away,
+            PitchId = pitch,
+            AiLevel = _options.Level,
+            HalfLengthSeconds = _options.HalfMinutes * 60f,
+            Humans = humans,
+            Aftertouch = aftertouch,
+            Seed = _options.Seed ?? Seed,
+        };
     }
 
     private void Reload()
@@ -294,19 +343,12 @@ internal sealed class ArcadeGame : Game
             Reload();
         }
 
-        if (_input.WasPressed(SystemAction.ResetBall))
+        foreach (SystemAction action in SceneActions)
         {
-            _scene.Session.ResetBall();
-        }
-
-        if (_input.WasPressed(SystemAction.ToggleAftertouch))
-        {
-            _scene.Session.Controller.AftertouchEnabled = !_scene.Session.Controller.AftertouchEnabled;
-        }
-
-        if (_input.WasPressed(SystemAction.NextPitch))
-        {
-            _scene.NextPitch();
+            if (_input.WasPressed(action))
+            {
+                _scene.HandleAction(action);
+            }
         }
 
         if (_input.WasPressed(SystemAction.NextLanguage))
@@ -314,7 +356,7 @@ internal sealed class ArcadeGame : Game
             var languages = _data.Localizer.Languages;
             int index = languages.ToList().FindIndex(language => language.Code == _data.Localizer.Language);
             _data.Localizer.SetLanguage(languages[(index + 1) % languages.Count].Code);
-            _hud.LanguageChanged();
+            _scene.LanguageChanged();
             Window.Title = _data.Localizer.Get("app.title");
         }
 
@@ -343,7 +385,7 @@ internal sealed class ArcadeGame : Game
     {
         foreach (MatchEvent matchEvent in world.Events.Items)
         {
-            _hud.OnEvent(matchEvent);
+            _scene.OnEvent(matchEvent);
             _debug.OnEvent(matchEvent);
         }
 

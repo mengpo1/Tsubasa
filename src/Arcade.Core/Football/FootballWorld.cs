@@ -24,6 +24,9 @@ public sealed class FootballWorld
     /// <summary>Speed above which a player is shown running (animation only).</summary>
     private const float RunningAnimationSpeed = 0.4f;
 
+    /// <summary>Distance in front of a carrier where the ball is held (m).</summary>
+    private const float CarryOffset = 0.3f;
+
     private readonly List<Player> _players = [];
     private readonly BallPhysics _ballPhysics;
 
@@ -98,8 +101,21 @@ public sealed class FootballWorld
             UpdateAction(player);
         }
 
+        ResolvePlayerCollisions();
+        KeepPlayersOutOfGoals();
         Ball.PreviousPosition = Ball.State.Position;
-        StepBall(dt);
+        switch (Ball.Status)
+        {
+            case BallStatus.Live:
+                StepBall(dt);
+                break;
+            case BallStatus.Carried:
+                FollowCarrier();
+                break;
+            case BallStatus.Dead:
+                break;
+        }
+
         Ball.ControlAcceleration = Vector3.Zero;
         UpdateGoalState();
         Tick++;
@@ -120,6 +136,8 @@ public sealed class FootballWorld
     {
         ArgumentNullException.ThrowIfNull(player);
         Vector2 unit = VectorMath.SafeNormalize(direction);
+        Ball.Status = BallStatus.Live;
+        Ball.CarrierId = Player.NoPlayer;
         Ball.State.Velocity = VectorMath.ClampLength(new Vector3(unit * horizontalSpeed, lift), Content.Physics.Ball.MaxSpeed);
         Ball.State.Position.Z = MathF.Max(0f, Ball.State.Position.Z);
         RecordTouch(player, BallTouchKind.Kick);
@@ -144,6 +162,30 @@ public sealed class FootballWorld
         float vertical = Ball.State.Position.Z > 0f ? Ball.State.Velocity.Z : 0f;
         Ball.State.Velocity = new Vector3(velocity, vertical);
         player.Action = PlayerAction.Controlling;
+    }
+
+    /// <summary>Places the ball for a restart: it stays still and untouchable until someone kicks it.</summary>
+    public void PlaceDeadBall(Vector2 spot)
+    {
+        Ball.Status = BallStatus.Dead;
+        Ball.CarrierId = Player.NoPlayer;
+        Ball.State.Position = new Vector3(spot, 0f);
+        Ball.State.Velocity = Vector3.Zero;
+        Ball.PreviousPosition = Ball.State.Position;
+        Ball.Aftertouch = AftertouchWindow.None;
+        BallInGoal = null;
+    }
+
+    /// <summary>Puts the ball in a player's hands (goalkeeper, throw-in). It follows him until he kicks it.</summary>
+    public void CarryBall(Player player, float height)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        Ball.Status = BallStatus.Carried;
+        Ball.CarrierId = player.Id;
+        Ball.CarryHeight = height;
+        Ball.Aftertouch = AftertouchWindow.None;
+        FollowCarrier();
+        Ball.PreviousPosition = Ball.State.Position;
     }
 
     /// <summary>Adds an aftertouch acceleration for the coming step.</summary>
@@ -181,9 +223,86 @@ public sealed class FootballWorld
                 if (CanTouch(player))
                 {
                     Vector2 position = Vector2.Lerp(player.PreviousPosition, player.Position, t);
-                    if (Overlaps(position))
+                    bool hands = UsesHands(player, position);
+                    if (Overlaps(position, hands))
                     {
-                        ResolveContact(player, position);
+                        ResolveContact(player, position, hands);
+                        if (Ball.Status != BallStatus.Live)
+                        {
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void FollowCarrier()
+    {
+        Player carrier = _players[Ball.CarrierId];
+        Vector2 hands = carrier.Position + (carrier.Facing.ToVector() * CarryOffset);
+        Ball.State.Position = new Vector3(hands, Ball.CarryHeight);
+        Ball.State.Velocity = new Vector3(carrier.Velocity, 0f);
+    }
+
+    /// <summary>Players are solid: overlapping bodies are pushed apart and their closing speed removed.</summary>
+    private void ResolvePlayerCollisions()
+    {
+        float minDistance = Content.Physics.Movement.BodyRadius * 2f;
+        float minSquared = minDistance * minDistance;
+        for (int i = 0; i < _players.Count; i++)
+        {
+            for (int j = i + 1; j < _players.Count; j++)
+            {
+                Player a = _players[i];
+                Player b = _players[j];
+                Vector2 offset = b.Position - a.Position;
+                float distanceSquared = offset.LengthSquared();
+                if (distanceSquared >= minSquared)
+                {
+                    continue;
+                }
+
+                float distance = MathF.Sqrt(distanceSquared);
+                Vector2 normal = distance > 1e-4f ? offset / distance : new Vector2(1f, 0f);
+                Vector2 push = normal * ((minDistance - distance) / 2f);
+                a.Position -= push;
+                b.Position += push;
+                float closing = Vector2.Dot(b.Velocity - a.Velocity, normal);
+                if (closing < 0f)
+                {
+                    Vector2 impulse = normal * (closing / 2f);
+                    a.Velocity += impulse;
+                    b.Velocity -= impulse;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The goal mouth is a wall for players: nobody walks into the net (a keeper holding the ball can therefore
+    /// never carry it over his own line by accident). Players can still run behind the goal line beside the goals.
+    /// </summary>
+    private void KeepPlayersOutOfGoals()
+    {
+        float body = Content.Physics.Movement.BodyRadius;
+        foreach (Player player in _players)
+        {
+            if (MathF.Abs(player.Position.X) > Pitch.GoalHalfWidth + Pitch.PostRadius + body)
+            {
+                continue;
+            }
+
+            foreach (GoalEnd end in PitchGeometry.Ends)
+            {
+                float outward = PitchGeometry.Outward(end);
+                float depth = (player.Position.Y - Pitch.GoalLineY(end)) * outward;
+                if (depth > -body && depth < Pitch.GoalDepth + body)
+                {
+                    player.Position = new Vector2(player.Position.X, Pitch.GoalLineY(end) - (outward * body));
+                    if (player.Velocity.Y * outward > 0f)
+                    {
+                        player.Velocity = new Vector2(player.Velocity.X, 0f);
                     }
                 }
             }
@@ -200,10 +319,20 @@ public sealed class FootballWorld
         return Ball.LastToucherId != player.Id || SecondsSince(player.LastTouchTick) >= Controls.Contact.TouchCooldown;
     }
 
-    private bool Overlaps(Vector2 playerPosition)
+    private bool UsesHands(Player player, Vector2 position) =>
+        player.IsGoalkeeper && Pitch.IsInPenaltyArea(position, player.DefendsEnd!.Value);
+
+    private bool Overlaps(Vector2 playerPosition, bool hands)
     {
         ContactConfig contact = Controls.Contact;
         float bottom = Ball.State.Position.Z;
+        if (hands)
+        {
+            float keeperReach = Controls.Keeper.Reach;
+            return bottom <= Controls.Keeper.MaxHeight
+                && Vector2.DistanceSquared(playerPosition, VectorMath.Horizontal(Ball.State.Position)) < keeperReach * keeperReach;
+        }
+
         if (bottom > contact.BodyHeight)
         {
             return false;
@@ -213,8 +342,8 @@ public sealed class FootballWorld
         return Vector2.DistanceSquared(playerPosition, VectorMath.Horizontal(Ball.State.Position)) < reach * reach;
     }
 
-    /// <summary>Applies the outcome of a player/ball contact: trap, dribble push or deflection.</summary>
-    private void ResolveContact(Player player, Vector2 playerPosition)
+    /// <summary>Applies the outcome of a player/ball contact: catch, trap, dribble push or deflection.</summary>
+    private void ResolveContact(Player player, Vector2 playerPosition, bool hands)
     {
         ControlConfig controls = Controls;
         ref BallState ball = ref Ball.State;
@@ -226,7 +355,23 @@ public sealed class FootballWorld
         bool atFeet = ball.Position.Z <= controls.Contact.FootHeight;
 
         BallTouchKind kind;
-        if (player.Intent.TrapReady && ball.Position.Z <= controls.Trap.MaxBallHeight && relativeSpeed3 <= controls.Trap.MaxRelativeSpeed)
+        if (hands && relativeSpeed3 <= controls.Keeper.CatchMaxSpeed)
+        {
+            RecordTouch(player, BallTouchKind.Catch);
+            CarryBall(player, controls.Keeper.CarryHeight);
+            return;
+        }
+
+        if (hands)
+        {
+            // Parry: the ball rebounds off the keeper's hands, harder than off a body.
+            float normalSpeed = MathF.Min(Vector2.Dot(relative, normal), 0f);
+            Vector2 tangent = relative - (normal * normalSpeed);
+            Vector2 parried = (tangent * controls.Deflection.TangentialKeep) - (normal * normalSpeed * controls.Keeper.ParryRestitution);
+            ball.Velocity = new Vector3(player.Velocity + parried, MathF.Abs(ball.Velocity.Z) * controls.Keeper.ParryRestitution);
+            kind = BallTouchKind.Deflection;
+        }
+        else if (player.Intent.TrapReady && ball.Position.Z <= controls.Trap.MaxBallHeight && relativeSpeed3 <= controls.Trap.MaxRelativeSpeed)
         {
             // Stop the ball: it now moves with the player and drops to his feet.
             ball.Velocity = new Vector3(player.Velocity, MathF.Min(ball.Velocity.Z, 0f) * 0.2f);

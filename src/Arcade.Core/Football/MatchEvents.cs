@@ -20,6 +20,24 @@ public enum MatchEventType
 
     /// <summary>The ball is in a goal (Detail = <see cref="Pitch.GoalEnd"/>).</summary>
     Goal,
+
+    /// <summary>A goal was awarded by the match (PlayerId = scorer, Detail = scoring team index).</summary>
+    GoalScored,
+
+    /// <summary>The ball left the field of play (Detail = <see cref="SetPieceKind"/> of the restart, Value = team index).</summary>
+    BallOut,
+
+    /// <summary>A restart was taken (Detail = <see cref="SetPieceKind"/>).</summary>
+    RestartTaken,
+
+    /// <summary>The ball changed team (Detail = new team index).</summary>
+    PossessionChanged,
+
+    /// <summary>A half started (Detail = half number, 1 or 2).</summary>
+    HalfStarted,
+
+    HalfTime,
+    FullTime,
 }
 
 public enum KickKind
@@ -28,6 +46,8 @@ public enum KickKind
     Pass,
     Chip,
     Dribble,
+    SetPiece,
+    KeeperKick,
 }
 
 /// <summary>

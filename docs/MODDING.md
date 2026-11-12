@@ -17,6 +17,8 @@ mods/
     ├── pitches/stade-nuit.json ajoute un terrain
     ├── surfaces/*.json
     ├── teams/*.json
+    ├── tactics/*.json          formations
+    ├── rulesets/*.json         déroulement des matchs
     └── locales/fr.json, locales/de.json ...
 ```
 
@@ -135,6 +137,7 @@ Un fichier absent ou un id inconnu est signalé dans le journal et remplacé par
   "id": "reds",
   "name": "Redcliff Rovers",
   "shortName": "RED",
+  "tactic": "4-4-2",
   "kit": { "shirt": "#C8202C", "shorts": "#F2F2F2", "socks": "#C8202C" },
   "players": [
     { "number": 9, "name": "I. Ingram", "role": "forward",
@@ -145,9 +148,47 @@ Un fichier absent ou un id inconnu est signalé dans le journal et remplacé par
 ```
 
 - `role` : `goalkeeper`, `defender`, `midfielder` ou `forward`.
+- `tactic` : id d'un fichier de `tactics/`. Les onze premiers joueurs occupent les onze postes de la tactique,
+  dans l'ordre. Le joueur placé au poste de gardien de la tactique garde les buts.
+- Il faut au moins onze joueurs pour jouer un match.
 - Les attributs sont sur l'échelle de `config/players.json › ratingScale` (0 à 100 par défaut). Leurs effets
   (multiplicateurs entre la pire et la meilleure note) se règlent dans le même fichier.
 - Pour renommer ou recolorer une équipe existante, il suffit d'écrire les clés modifiées (voir `example-mod`).
+
+## Tactiques
+
+`tactics/<id>.json` décrit une formation dans un repère normalisé propre à l'équipe : x de -1 (touche gauche) à 1
+(touche droite) quand l'équipe attaque vers le haut, y de -1 (sa ligne de but) à 1 (la ligne adverse).
+
+```json
+{
+  "id": "4-4-2",
+  "nameKey": "tactic.442",
+  "ballFollow": { "x": 0.4, "y": 0.5 },
+  "attackShift": 0.12,
+  "slots": [
+    { "role": "goalkeeper", "home": [0.0, -0.94], "kickOff": [0.0, -0.94], "minY": -1.0, "maxY": -0.75 },
+    { "role": "forward", "home": [-0.2, 0.28], "kickOff": [0.0, -0.01], "minY": -0.4, "maxY": 0.88, "kickOffTaker": true }
+  ]
+}
+```
+
+- Onze postes exactement, dont un gardien et un tireur du coup d'envoi.
+- Position d'un poste : `home` + position normalisée du ballon × `ballFollow`, plus `attackShift` vers l'avant
+  quand l'équipe a le ballon, bornée par `minY` et `maxY`.
+- `kickOff` : position au coup d'envoi, obligatoirement dans sa moitié (y ≤ 0). Les joueurs de l'équipe qui
+  n'engage pas sont repoussés hors du rond central.
+
+## Règlement et IA
+
+- `rulesets/<id>.json` : durée réelle d'une mi-temps, minutes affichées, délais des célébrations, des remises en
+  jeu et de la mi-temps, distances imposées aux adversaires, délai avant qu'un humain inactif laisse l'ordinateur
+  tirer la remise en jeu, changement de côté.
+- `config/ai.json` : niveaux de difficulté (réaction, intervalle de décision, nombre de poursuivants, portée et
+  précision des tirs et des passes, temps de garde du ballon, délai des remises en jeu), placement (rayons,
+  distances de passe, seuil de décision) et gardien (sortie, ramassage, temps de garde, dégagement).
+- `config/controls.json` : `keeper` (mains du gardien), `selection` (choix du joueur contrôlé), `setPieces`
+  (puissance et hauteur des remises en jeu de base selon la durée d'appui).
 
 ## Terrains et surfaces
 
@@ -161,7 +202,8 @@ Un fichier absent ou un id inconnu est signalé dans le journal et remplacé par
 | Fichier | Contenu |
 |---|---|
 | `config/physics.json` | Gravité, ballon, buts, panneaux, locomotion des joueurs |
-| `config/controls.json` | Portées, fenêtres de timing, puissances de frappe, aftertouch |
+| `config/controls.json` | Portées, fenêtres de timing, puissances de frappe, aftertouch, gardien, sélection, remises en jeu |
+| `config/ai.json` | Niveaux et comportements de l'ordinateur |
 | `config/players.json` | Échelle et effets des attributs, fatigue |
 | `config/display.json` | Résolution virtuelle, échelle, caméra, radar (affichage seulement) |
 | `config/input.json` | Touches et boutons (noms des énumérations MonoGame `Keys` et `Buttons`) |

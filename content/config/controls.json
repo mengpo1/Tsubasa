@@ -56,5 +56,24 @@
     "shotScale": 1.0,
     "passScale": 0.6,
     "chipScale": 0.8
+  },
+  "keeper": {
+    "reach": 0.9,
+    "maxHeight": 2.4,
+    "catchMaxSpeed": 21.0,
+    "parryRestitution": 0.45,
+    "carryHeight": 1.1
+  },
+  "selection": {
+    "switchMargin": 1.5,
+    "minSwitchInterval": 0.3,
+    "anticipation": 0.25
+  },
+  "setPieces": {
+    "kickOff": { "minSpeed": 5.0, "maxSpeed": 18.0, "minLift": 0.0, "maxLift": 3.0, "chargeTime": 0.8, "aftertouchScale": 0.5 },
+    "throwIn": { "minSpeed": 6.0, "maxSpeed": 14.0, "minLift": 2.0, "maxLift": 5.0, "chargeTime": 0.8, "aftertouchScale": 0.0 },
+    "corner": { "minSpeed": 10.0, "maxSpeed": 26.0, "minLift": 4.0, "maxLift": 9.0, "chargeTime": 0.9, "aftertouchScale": 1.0 },
+    "goalKick": { "minSpeed": 14.0, "maxSpeed": 28.0, "minLift": 6.0, "maxLift": 11.0, "chargeTime": 0.9, "aftertouchScale": 0.6 },
+    "throwInHeight": 2.0
   }
 }

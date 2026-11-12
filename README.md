@@ -5,9 +5,14 @@ Jeu de football 2D vu de dessus, en C# / MonoGame, qui vise les **mécaniques et
 Le ballon n'est jamais collé au pied : on le pousse, on le perd, on le contrôle, on le frappe et on le
 courbe avec l'aftertouch, avec un seul bouton dont le sens dépend du timing.
 
-**État actuel : lots 0 et 1** (base technique et sensations fondamentales). Un joueur, un ballon et deux buts
-sur un terrain d'entraînement. Pas encore d'adversaires, d'IA ni de match : voir
-[docs/GAMEPLAY.md](docs/GAMEPLAY.md) pour ce qui est réellement implémenté.
+**État actuel : lots 0 à 2.** On peut jouer un **match complet contre l'ordinateur** :
+- deux équipes de onze, avec sélection automatique du joueur le plus proche du ballon ;
+- une IA élémentaire et un gardien de base ;
+- score, chronomètre, mi-temps avec changement de côté ;
+- coups d'envoi, touches, corners et six mètres.
+
+Il existe aussi un terrain d'entraînement pour travailler les gestes. Pas encore de tacles, de têtes, de fautes,
+de hors-jeu ni de menus (lots 3 à 5). Le détail de ce qui est implémenté est dans [docs/GAMEPLAY.md](docs/GAMEPLAY.md).
 
 ## Prérequis
 
@@ -25,6 +30,8 @@ dotnet build Tsubasa.slnx
 dotnet run --project src/Arcade.Desktop
 ```
 
+Par défaut, le jeu lance un **match amical** : vous dirigez l'équipe à domicile contre l'ordinateur.
+
 En développement, le jeu lit `content/` et `mods/` directement dans le dépôt : modifiez un fichier JSON
 (par exemple `content/config/controls.json`) puis appuyez sur **F5** pour recharger sans recompiler.
 
@@ -32,10 +39,17 @@ Options utiles (`dotnet run --project src/Arcade.Desktop -- --help`) :
 
 | Option | Effet |
 |---|---|
+| `--mode training` | Terrain d'entraînement au lieu du match |
+| `--players 0` | Ordinateur contre ordinateur (pour observer l'IA) |
+| `--players 2` | Deux joueurs : flèches + Espace contre W/A/S/D + Maj gauche (ou deux manettes) |
+| `--home reds --away blues` | Équipes (dossier `content/teams/`) |
+| `--level easy` | Niveau de l'ordinateur : `easy`, `normal` ou `hard` |
+| `--half-minutes 5` | Durée réelle d'une mi-temps (3 par défaut) |
+| `--debug` | Démarre avec l'overlay debug (états et cibles de l'IA) |
 | `--lang fr` | Langue (sinon `settings.json`, sinon anglais) |
 | `--mod example-mod` | Active un mod (répétable ; l'ordre donne la priorité) |
 | `--no-mods` | Désactive tous les mods |
-| `--pitch icy` | Terrain d'entraînement : `normal`, `wet`, `soggy`, `artificial`, `icy`, `muddy`, `bumpy` |
+| `--pitch icy` | Terrain : `normal`, `wet`, `soggy`, `artificial`, `icy`, `muddy`, `bumpy` |
 | `--scale 3` | Taille de fenêtre (multiple de la résolution virtuelle 640×360) |
 | `--fullscreen` | Plein écran |
 
@@ -55,6 +69,7 @@ copiés à côté de l'exécutable. Sur macOS, un exécutable non signé peut de
 |---|---|---|
 | Courir (8 directions) | Flèches | Stick gauche ou croix |
 | Bouton d'action | Espace ou Ctrl droit | A ou B |
+| Joueur 2 (`--players 2`) | W/A/S/D + Maj gauche ou Q (sur AZERTY, remappez en Z/Q/S/D dans `content/config/input.json`) | Deuxième manette |
 
 Le bouton unique est contextuel :
 
@@ -65,6 +80,11 @@ Le bouton unique est contextuel :
 - **Garder le ballon** : relâcher le bouton joystick au centre. Une direction repart en dribble, le bouton tire.
 - **Ballon piqué** : inverser le joystick quand le ballon est au pied.
 - **Aftertouch** : juste après une frappe, pousser le joystick sur le côté (ou en diagonale avant) courbe le ballon.
+
+En match, vous contrôlez automatiquement le joueur de champ le plus proche du ballon. Le gardien est géré par
+l'ordinateur, comme dans Kick Off 2. Pour une remise en jeu (coup d'envoi, touche, corner), visez avec le joystick,
+maintenez le bouton pour doser et relâchez pour frapper. Sans appui pendant 4 s, l'ordinateur la joue pour vous.
+Après le coup de sifflet final, le bouton relance un match.
 
 Touches de l'entraînement : **R** replacer le ballon · **T** aftertouch on/off · **F3** terrain suivant ·
 **F7** langue suivante · **X** radar · **[ / ]** zoom · **P** pause · **F1** debug · **F5** recharger les données ·
@@ -77,8 +97,8 @@ Toutes les touches sont remappables dans `content/config/input.json`.
 dotnet test Tsubasa.slnx
 ```
 
-Les tests n'ouvrent aucune fenêtre. Ils couvrent la simulation, les contrôles, les données réelles du jeu,
-les mods et les traductions.
+Les tests n'ouvrent aucune fenêtre. Ils couvrent la simulation, les contrôles, le déroulement des matchs
+(arbitre, remises en jeu, mi-temps), l'IA, les données réelles du jeu, les mods et les traductions.
 
 ### Exécution scriptée et captures d'écran
 
@@ -86,10 +106,17 @@ Le jeu peut rejouer une séquence d'entrées (60 Hz fixes) et enregistrer des ca
 sans clavier (par exemple sous Linux avec `xvfb-run`) :
 
 ```bash
-dotnet run --project src/Arcade.Desktop -- --script tools/scripts/dribble-shot-goal.json --capture-ticks 300,384,400 --exit-tick 410
+dotnet run --project src/Arcade.Desktop -- --mode training --script tools/scripts/dribble-shot-goal.json --capture-ticks 300,384,400 --exit-tick 410
 ```
 
-Les images sont écrites dans `artifacts/screenshots/`. Autres scripts : `trap-and-pass.json` et `chip.json`.
+Les images sont écrites dans `artifacts/screenshots/`. Autres scripts : `trap-and-pass.json` et `chip.json`
+(entraînement, avec `--mode training`), ainsi que `match-human.json`.
+
+Pour observer un match entier sans intervenir :
+
+```bash
+dotnet run --project src/Arcade.Desktop -- --players 0 --debug
+```
 
 ## Mods
 

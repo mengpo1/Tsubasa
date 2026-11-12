@@ -14,8 +14,12 @@ public sealed record TeamDefinition : IContentData
     /// <summary>Three-letter abbreviation for the scoreboard.</summary>
     public required string ShortName { get; init; }
 
+    /// <summary>Id of the default tactic (see <c>tactics/</c>).</summary>
+    public required string Tactic { get; init; }
+
     public required KitDefinition Kit { get; init; }
 
+    /// <summary>Squad. The first eleven start the match, in the order of the tactic slots.</summary>
     public required IReadOnlyList<PlayerProfile> Players { get; init; }
 
     public void Validate(ICollection<string> problems)
@@ -23,6 +27,7 @@ public sealed record TeamDefinition : IContentData
         DataChecks.NotEmpty(problems, "id", Id);
         DataChecks.NotEmpty(problems, "name", Name);
         DataChecks.NotEmpty(problems, "shortName", ShortName);
+        DataChecks.NotEmpty(problems, "tactic", Tactic);
         DataChecks.Nested(problems, "kit", Kit);
         if (Players.Count == 0)
         {

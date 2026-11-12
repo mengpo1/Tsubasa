@@ -86,7 +86,7 @@ internal sealed class TrainingHud
         string aftertouch = _localizer.Get(controller.AftertouchEnabled ? "hud.aftertouch.on" : "hud.aftertouch.off");
         string speed = _ballSpeed.Get((int)MathF.Round(world.Ball.Velocity.Length() * 3.6f), _version);
         string energy = _energy.Get((int)MathF.Round(session.Player.Energy * 100f), _version);
-        string phase = _localizer.Get(PhaseKey(controller.Phase));
+        string phase = _localizer.Get(MatchHud.PhaseKey(controller.Phase));
         ReadOnlySpan<string> lines = [phase, speed, energy, aftertouch, pitchName];
         float y = screen.Height - margin - (lines.Length * small.LineHeight) - small.LineHeight;
         foreach (string line in lines)
@@ -132,23 +132,6 @@ internal sealed class TrainingHud
             noticeY += box.Height + (margin * 0.5f);
         }
     }
-
-    public void DrawPaused(SpriteBatch batch, Texture2D pixel, Rectangle screen, float ui)
-    {
-        Shapes.Rectangle(batch, pixel, new RectangleF(0, 0, screen.Width, screen.Height), Color.Black * 0.4f);
-        SpriteFontBase big = _fonts.Bold(20f * ui);
-        string text = _localizer.Get("hud.paused");
-        Vector2 size = big.MeasureString(text);
-        big.DrawText(batch, text, new Vector2((screen.Width - size.X) / 2f, (screen.Height - size.Y) / 2f), Color.White);
-    }
-
-    private static string PhaseKey(ControlPhase phase) => phase switch
-    {
-        ControlPhase.TrapArmed => "control.trapArmed",
-        ControlPhase.Holding => "control.holding",
-        ControlPhase.AtFeet => "control.atFeet",
-        _ => "control.free",
-    };
 
     private static string DecisionKey(ControlDecision decision) => decision switch
     {

@@ -1,6 +1,6 @@
 # Mécaniques implémentées
 
-Ce document décrit **ce qui fonctionne réellement** dans l'état actuel du projet (lots 0 et 1) et d'où vient
+Ce document décrit **ce qui fonctionne réellement** dans l'état actuel du projet (lots 0 à 2) et d'où vient
 chaque comportement. Il ne décrit pas de fonctions futures.
 
 Légende de provenance :
@@ -104,6 +104,89 @@ Choix d'interprétation à noter :
   the ground ») arrivera au lot 3. Il faudra alors trancher la distinction tacle / contrôle, que le manuel ne
   documente pas.
 
+## Match (lot 2)
+
+### Déroulement
+
+- Deux équipes de onze : les onze premiers joueurs du fichier d'équipe, dans l'ordre des postes de la tactique.
+  Pas encore de remplaçants.
+- Durée : 2 × 3 minutes réelles par défaut (`rulesets/classic.json`, option `--half-minutes`), affichées de 0 à 90'
+  [KO2 : mi-temps de 3, 5, 10 ou 20 minutes]. Le chronomètre s'arrête pendant la célébration d'un but, la mise en
+  place des coups d'envoi et la mi-temps [Choix].
+- Tirage au sort de l'équipe qui donne le coup d'envoi (graine du match). L'autre équipe engage en seconde période.
+  Changement de côté à la mi-temps. Après un but, l'équipe qui l'a encaissé engage.
+- Coup d'envoi : tous les joueurs dans leur moitié, les adversaires hors du rond central (9,15 m). Les joueurs ont
+  3 s pour rejoindre leur place ; les retardataires y sont ensuite placés directement [Choix].
+- Fin du temps réglementaire au coup de sifflet, même pendant une action [Choix]. Pas encore de prolongations ni
+  de tirs au but (lot 5).
+
+### Sorties et remises en jeu de base
+
+- Ballon entièrement sorti par une ligne de touche : **touche** pour l'adversaire du dernier joueur à l'avoir
+  touché, au point de sortie.
+- Ballon sorti par la ligne de but hors du but : **six mètres** si un attaquant l'a touché en dernier, **corner**
+  du côté de la sortie si c'est un défenseur.
+- Remises en jeu de l'humain (coup d'envoi, touche, corner) : le tireur est désigné et devient le joueur contrôlé.
+  Le joystick vise ; maintenir le bouton charge la puissance et la hauteur, relâcher frappe [Choix, fondé sur les
+  touches de FW : « la durée d'appui détermine la distance » et « seules les cinq positions avant » sont
+  utilisables]. Sans appui pendant 4 s, l'ordinateur joue la remise en jeu [KO2/FW : touches automatiques sauf
+  si le joueur agit].
+- La touche part des mains, au-dessus de la tête (2 m). Les six mètres sont toujours tirés par le gardien de
+  l'ordinateur [KO2 : « the keeper takes them automatically unless you act quickly » ; le choix manuel viendra au
+  lot 4].
+- Adversaires à 9,15 m lors des corners, six mètres et coups d'envoi, à 3 m lors des touches.
+- Les corners à neuf puissances, la hauteur, le biais et l'aftertouch de Final Whistle viendront au lot 4. Ici, la
+  puissance et la hauteur augmentent ensemble avec la durée d'appui (`controls.json › setPieces`).
+
+### Joueur contrôlé
+
+- Mode « jouer en équipe » [KO2] : vous contrôlez le joueur de champ le plus proche de l'endroit où sera le ballon
+  dans 0,25 s, avec 1,5 m de marge et au plus un changement toutes les 0,3 s (`controls.json › selection`) [Estimé].
+- Pas de changement pendant que votre joueur garde le ballon ou tire une remise en jeu.
+- Bouton maintenu pendant qu'une passe arrive : le receveur, qui devient votre joueur, amortit le ballon [Choix].
+- L'aftertouch reste actif après une passe même si le contrôle passe au receveur [Choix].
+- Le gardien n'est jamais contrôlé par l'humain [KO2 : « YOU CAN NOT PLAY AS A KEEPER »].
+
+### Contacts entre joueurs
+
+- Les joueurs sont des disques de 0,4 m de rayon : ils se repoussent et perdent leur vitesse de rapprochement
+  [Choix, `physics.json › movement.bodyRadius`]. Pas encore de chute ni de faute (lots 3–4).
+- Un joueur qui court dans un ballon tenu par un adversaire le lui prend par le contact : le ballon part dans sa
+  direction. C'est le « blocking tackle » de KO2, sans bouton. Le tacle glissé viendra au lot 3.
+- Personne ne peut entrer dans un but : la bouche du but est un mur pour les joueurs [Choix]. Un gardien ne peut
+  donc pas emporter le ballon derrière sa ligne par accident.
+
+### Gardien élémentaire
+
+- Mains dans sa surface : portée 0,9 m, jusqu'à 2,4 m de haut. Il capte les ballons arrivant à moins de 21 m/s ;
+  au-delà, il repousse (restitution 0,45) [Estimé, `controls.json › keeper`].
+- Placement entre le ballon et le centre du but, de 1 à 4 m de sa ligne selon la distance du ballon.
+- Après son temps de réaction, il court vers le point où le tir va croiser sa ligne. **Pas de plongeon** : il ne
+  rattrape que ce que sa course et ses bras permettent, donc pas d'arrêt impossible ni de téléportation.
+- Il ramasse les ballons lents de sa surface quand il y arrive avant les attaquants. Il garde le ballon 1,2 s puis
+  relance vers le coéquipier libre le plus avancé, sinon vers l'aile la moins occupée.
+
+### IA élémentaire
+
+- Le porteur dribble dans la meilleure direction parmi cinq. Il tire à moins de 22 m (niveau normal) si l'angle
+  le permet, en visant le côté opposé au gardien, avec une erreur de visée. Quand il est pressé (adversaire à
+  moins de 4 m) ou qu'un partenaire est nettement mieux placé, il amortit puis passe.
+- Les notes de passe tiennent compte de la progression, de l'espace autour du receveur et de la ligne de passe
+  dégagée. **Flair** : plus il est élevé, plus le joueur garde le ballon [FW : « individual game »].
+- Sans le ballon : un ou deux poursuivants (ceux qui l'atteignent le plus tôt), les autres tiennent leur poste
+  (formation décalée avec le ballon, plus haute en possession). Un joueur qui vient de perdre le ballon ne repart
+  pas aussitôt à sa poursuite.
+- Niveaux `easy`, `normal`, `hard` (`config/ai.json`) : réaction, fréquence de décision, précision, portée de tir,
+  nombre de poursuivants. Aucun bonus de vitesse ni de physique.
+- Les passes et tirs de l'IA ne sont pas limités aux 8 directions du joystick [Choix], compensé par l'erreur de
+  visée. Ils obéissent aux mêmes conditions de portée et de timing que ceux de l'humain.
+- Mesure : sur six matchs ordinateur contre ordinateur de 2 × 3 minutes, scores de 0-0 à 3-0, des passes, des
+  tirs, des parades, des touches, des corners et des six mètres, aucun blocage.
+
+Tactiques fournies : 4-4-2 et 4-3-3 (`content/tactics/`). Les positions sont des [Estimé] : les manuels ne
+donnent pas les tactiques d'origine. Les positions distinctes en attaque et en défense de Final Whistle viendront
+au lot 4.
+
 ## Caméra et affichage
 
 - La caméra suit le ballon avec une anticipation de 0,3 s sur sa vitesse et un lissage exponentiel. Elle reste
@@ -112,7 +195,8 @@ Choix d'interprétation à noter :
 - Vue : 640×360 pixels virtuels à 16 px/m, soit environ 40 × 22 m visibles, à peu près le cadrage serré de
   l'original. Zoom réglable avec **[ ]**.
 - Radar (scanner) : terrain miniature avec joueurs, ballon et zone visible [KO2 : scanner].
-- Tableau : équipe, buts, chronomètre de la séance.
+- Tableau : score et minute de jeu en match ; équipe, buts et chronomètre en entraînement.
+- Bandeaux : coup d'envoi, touche, corner, six mètres, but (avec le buteur), mi-temps, fin du match.
 
 ## Paramètres à calibrer en priorité
 
@@ -125,12 +209,19 @@ Ces valeurs font l'essentiel des sensations. Toutes se règlent dans les donnée
 4. `physics.json › ball.rollingResistance` et `rollingDrag` : portée des passes et des tirs au sol.
 5. `controls.json › aftertouch` : intensité et durée de la courbe.
 6. `controls.json › pass` : puissances et temps de charge.
+7. `controls.json › keeper` et `ai.json › keeper` : difficulté de marquer (portée, vitesse captée, sortie).
+8. `ai.json › levels` : réaction et précision de l'ordinateur pour chaque niveau.
+9. `rulesets/classic.json` : durée des mi-temps et des arrêts de jeu.
 
 ## Limitations connues
 
-- Pas encore d'adversaire, de coéquipier, d'IA, de gardien, de règles de match, de tacle, de tête ni de reprise
-  de volée (lots 2 et 3). Un ballon haut est amorti s'il est contrôlé, sinon il rebondit sur le corps.
+- Pas encore de tacle glissé, de faute, de carton, de tête, de reprise de volée, de retourné, de flick ni de
+  plongeon du gardien (lot 3). Un ballon haut est amorti s'il est contrôlé, sinon il rebondit sur le corps.
+- Pas de hors-jeu, de coup franc, de penalty, de remplacement, de prolongation ni de tirs au but (lots 4–5).
+- Les six mètres de l'équipe humaine sont toujours tirés par l'ordinateur.
+- IA élémentaire : pas de marquage, de couverture ni d'appels de balle construits. Les mêlées autour du ballon
+  restent fréquentes.
 - Le vent est simulé mais n'a pas d'option de jeu.
 - La fatigue n'affecte pas encore la précision.
-- Pas de son.
-- Graphismes temporaires générés.
+- Pas de menus (lot 5) : le mode de jeu se choisit en ligne de commande.
+- Pas de son. Graphismes temporaires générés.

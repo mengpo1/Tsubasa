@@ -2,7 +2,9 @@ using System.Globalization;
 using System.Text;
 using Arcade.Core.Football;
 using Arcade.Core.Football.Ball;
+using Arcade.Core.Football.AI;
 using Arcade.Core.Football.Control;
+using Arcade.Core.Football.Match;
 using Arcade.Core.Football.Players;
 using Arcade.Desktop.Rendering;
 using FontStashSharp;
@@ -56,11 +58,28 @@ internal sealed class DebugOverlay
         }
     }
 
-    public void DrawWorld(SpriteBatch batch, Texture2D pixel, FootballWorld world, ContextualController? controller, float alpha, ViewTransform view)
+    public void DrawWorld(SpriteBatch batch, Texture2D pixel, FootballWorld world, ContextualController? controller, FootballMatch? match, float alpha, ViewTransform view)
     {
         if (!Enabled)
         {
             return;
+        }
+
+        if (match is not null)
+        {
+            // AI targets: where each computer player is heading.
+            foreach (MatchTeam team in match.Teams)
+            {
+                Color color = team.Index == 0 ? Color.OrangeRed : Color.DeepSkyBlue;
+                foreach (Player p in team.Players)
+                {
+                    if (!match.IsHumanControlled(p))
+                    {
+                        AiBrain brain = match.AiFor(team.Index).Brain(p);
+                        Shapes.Line(batch, pixel, view.ToScreen(p.Position), view.ToScreen(brain.Target), 1f, color * 0.6f);
+                    }
+                }
+            }
         }
 
         float foot = world.Controls.Contact.FootRadius * view.Scale;
@@ -109,7 +128,34 @@ internal sealed class DebugOverlay
         }
     }
 
-    public void DrawText(SpriteBatch batch, Texture2D pixel, SpriteFontBase font, FootballWorld world, ContextualController? controller, IReadOnlyList<string> packs, float x, float y)
+    /// <summary>State and decision of each computer player, next to him (window coordinates).</summary>
+    public void DrawAiLabels(SpriteBatch batch, SpriteFontBase font, FootballMatch? match, ViewTransform view, Func<Vector2, Vector2> toWindow)
+    {
+        ArgumentNullException.ThrowIfNull(toWindow);
+        if (!Enabled || match is null)
+        {
+            return;
+        }
+
+        foreach (MatchTeam team in match.Teams)
+        {
+            foreach (Player p in team.Players)
+            {
+                if (match.IsHumanControlled(p))
+                {
+                    continue;
+                }
+
+                AiBrain brain = match.AiFor(team.Index).Brain(p);
+                Vector2 at = toWindow(view.ToScreen(p.Position, 2.2f));
+                string label = string.IsNullOrEmpty(brain.Decision) ? brain.State.ToString() : brain.Decision;
+                font.DrawText(batch, label, at + new Vector2(1f, 1f), Color.Black);
+                font.DrawText(batch, label, at, team.Index == 0 ? Color.Orange : Color.LightSkyBlue);
+            }
+        }
+    }
+
+    public void DrawText(SpriteBatch batch, Texture2D pixel, SpriteFontBase font, FootballWorld world, ContextualController? controller, FootballMatch? match, IReadOnlyList<string> packs, float x, float y)
     {
         if (!Enabled)
         {
@@ -126,7 +172,13 @@ internal sealed class DebugOverlay
             PlayerIntent intent = p.CurrentIntent;
             _text.Append(c, $"player #{p.Profile.Number} {p.Profile.Name}  pos {p.Position.X:0.00},{p.Position.Y:0.00}  v {p.Speed:0.00} m/s  energy {p.Energy:0.00}\n");
             _text.Append(c, $"phase {controller.Phase}  decision {controller.LastDecision}  intent move {intent.Move} face {intent.Face} trap {intent.TrapReady} keep {intent.KeepsBall}\n");
-            _text.Append(c, $"last touch {p.LastTouchKind} {world.SecondsSince(p.LastTouchTick):0.00}s ago  aim {controller.AimSeconds:0.00}s\n");
+            string lastTouch = p.LastTouchKind == BallTouchKind.None ? "-" : string.Create(c, $"{p.LastTouchKind} {world.SecondsSince(p.LastTouchTick):0.00}s ago");
+            _text.Append(c, $"last touch {lastTouch}  aim {controller.AimSeconds:0.00}s\n");
+        }
+
+        if (match is not null)
+        {
+            _text.Append(c, $"match phase {match.Phase} {match.PhaseSeconds:0.0}s  half {match.Half}  clock {match.ClockSeconds:0.0}s  possession {match.PossessionTeam}  restart {match.CurrentRestart?.Kind}\n");
         }
 
         Num.Vector3 b = world.Ball.Position;

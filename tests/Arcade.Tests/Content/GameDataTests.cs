@@ -15,6 +15,10 @@ public sealed class GameDataTests
         Assert.Contains("normal", content.Pitches.Keys);
         Assert.Equal(7, content.Surfaces.Count);
         Assert.All(content.Teams.Values, team => Assert.True(team.Players.Count >= 11));
+        Assert.Contains("4-4-2", content.Tactics.Keys);
+        Assert.Contains("4-3-3", content.Tactics.Keys);
+        Assert.Contains("classic", content.Rulesets.Keys);
+        Assert.All(content.Teams.Values, team => Assert.Contains(team.Tactic, content.Tactics.Keys));
         var catalog = result.Repository.LoadData<AssetCatalog>(AssetCatalog.FileName);
         Assert.All(catalog.Textures.Values, path => Assert.True(result.Repository.Exists(path), path));
         Assert.All(catalog.Fonts.Values, path => Assert.True(result.Repository.Exists(path), path));

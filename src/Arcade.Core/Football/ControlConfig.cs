@@ -26,6 +26,12 @@ public sealed record ControlConfig : IContentData
 
     public required AftertouchConfig Aftertouch { get; init; }
 
+    public required KeeperConfig Keeper { get; init; }
+
+    public required SelectionConfig Selection { get; init; }
+
+    public required SetPiecesConfig SetPieces { get; init; }
+
     public void Validate(ICollection<string> problems)
     {
         DataChecks.Nested(problems, "contact", Contact);
@@ -36,6 +42,123 @@ public sealed record ControlConfig : IContentData
         DataChecks.Nested(problems, "pass", Pass);
         DataChecks.Nested(problems, "chip", Chip);
         DataChecks.Nested(problems, "aftertouch", Aftertouch);
+        DataChecks.Nested(problems, "keeper", Keeper);
+        DataChecks.Nested(problems, "selection", Selection);
+        DataChecks.Nested(problems, "setPieces", SetPieces);
+    }
+}
+
+/// <summary>Goalkeeper hands in his own penalty area (elementary keeper, Lot 2).</summary>
+public sealed record KeeperConfig : IContentData
+{
+    /// <summary>Horizontal reach of the arms (m).</summary>
+    public required float Reach { get; init; }
+
+    /// <summary>Highest ball bottom the keeper can reach (m).</summary>
+    public required float MaxHeight { get; init; }
+
+    /// <summary>Faster balls (relative to the keeper) are parried instead of caught (m/s).</summary>
+    public required float CatchMaxSpeed { get; init; }
+
+    /// <summary>Restitution of a parry.</summary>
+    public required float ParryRestitution { get; init; }
+
+    /// <summary>Height of the ball held in the hands (m).</summary>
+    public required float CarryHeight { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "reach", Reach);
+        DataChecks.Positive(problems, "maxHeight", MaxHeight);
+        DataChecks.Positive(problems, "catchMaxSpeed", CatchMaxSpeed);
+        DataChecks.InRange(problems, "parryRestitution", ParryRestitution, 0f, 1f);
+        DataChecks.InRange(problems, "carryHeight", CarryHeight, 0f, 3f);
+    }
+}
+
+/// <summary>Automatic choice of the human-controlled player ("playing as a team": the player nearest the ball).</summary>
+public sealed record SelectionConfig : IContentData
+{
+    /// <summary>A teammate must be this much closer (m) than the current player to take control.</summary>
+    public required float SwitchMargin { get; init; }
+
+    /// <summary>Minimum time between two switches (s).</summary>
+    public required float MinSwitchInterval { get; init; }
+
+    /// <summary>Distances are measured to where the ball will be after this time (s).</summary>
+    public required float Anticipation { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.NonNegative(problems, "switchMargin", SwitchMargin);
+        DataChecks.NonNegative(problems, "minSwitchInterval", MinSwitchInterval);
+        DataChecks.NonNegative(problems, "anticipation", Anticipation);
+    }
+}
+
+/// <summary>Basic restarts (Lot 2): aim with the joystick, hold fire to charge, release to kick.</summary>
+public sealed record SetPiecesConfig : IContentData
+{
+    public required SetPieceKickConfig KickOff { get; init; }
+
+    public required SetPieceKickConfig ThrowIn { get; init; }
+
+    public required SetPieceKickConfig Corner { get; init; }
+
+    public required SetPieceKickConfig GoalKick { get; init; }
+
+    /// <summary>Height of the ball in the thrower's hands (m).</summary>
+    public required float ThrowInHeight { get; init; }
+
+    public SetPieceKickConfig For(SetPieceKind kind) => kind switch
+    {
+        SetPieceKind.KickOff => KickOff,
+        SetPieceKind.ThrowIn => ThrowIn,
+        SetPieceKind.Corner => Corner,
+        _ => GoalKick,
+    };
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Nested(problems, "kickOff", KickOff);
+        DataChecks.Nested(problems, "throwIn", ThrowIn);
+        DataChecks.Nested(problems, "corner", Corner);
+        DataChecks.Nested(problems, "goalKick", GoalKick);
+        DataChecks.InRange(problems, "throwInHeight", ThrowInHeight, 0f, 3f);
+    }
+}
+
+public enum SetPieceKind
+{
+    KickOff,
+    ThrowIn,
+    Corner,
+    GoalKick,
+}
+
+/// <summary>Speed and lift interpolated between their minimum and maximum by the charge (hold time / chargeTime).</summary>
+public sealed record SetPieceKickConfig : IContentData
+{
+    public required float MinSpeed { get; init; }
+
+    public required float MaxSpeed { get; init; }
+
+    public required float MinLift { get; init; }
+
+    public required float MaxLift { get; init; }
+
+    public required float ChargeTime { get; init; }
+
+    public required float AftertouchScale { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "minSpeed", MinSpeed);
+        DataChecks.InRange(problems, "maxSpeed", MaxSpeed, MinSpeed, 60f);
+        DataChecks.NonNegative(problems, "minLift", MinLift);
+        DataChecks.InRange(problems, "maxLift", MaxLift, MinLift, 40f);
+        DataChecks.Positive(problems, "chargeTime", ChargeTime);
+        DataChecks.NonNegative(problems, "aftertouchScale", AftertouchScale);
     }
 }
 

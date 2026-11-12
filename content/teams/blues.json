@@ -2,6 +2,7 @@
   "id": "blues",
   "name": "Bluewater Athletic",
   "shortName": "BLU",
+  "tactic": "4-3-3",
   "kit": {
     "shirt": "#1E4FB4",
     "shorts": "#1A1A2E",

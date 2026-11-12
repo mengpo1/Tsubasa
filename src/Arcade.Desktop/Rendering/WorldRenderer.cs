@@ -1,6 +1,7 @@
 using Arcade.Core.Common;
 using Arcade.Core.Content;
 using Arcade.Core.Football;
+using Arcade.Core.Football.Control;
 using Arcade.Core.Football.Pitch;
 using Arcade.Core.Football.Players;
 using Arcade.Core.Football.Teams;
@@ -27,7 +28,8 @@ internal sealed class WorldRenderer
     /// <summary>Height of the selection marker above the feet (m).</summary>
     private const float MarkerHeight = 2.6f;
 
-    private static readonly Color SelectionColor = new(255, 230, 60);
+    /// <summary>Marker colour of each human player (control set order).</summary>
+    private static readonly Color[] SelectionColors = [new(255, 230, 60), new(80, 230, 255), new(255, 110, 220), new(255, 160, 60)];
 
     private readonly float _basePixelsPerMetre;
     private readonly List<Drawable> _drawables = new(64);
@@ -47,8 +49,9 @@ internal sealed class WorldRenderer
         BottomGoalNet,
     }
 
-    public void Draw(SpriteBatch batch, TextureStore textures, FootballWorld world, IReadOnlyList<KitDefinition> kits, Player? selected, float alpha, ViewTransform view, float? passCharge)
+    public void Draw(SpriteBatch batch, TextureStore textures, FootballWorld world, IReadOnlyList<KitDefinition> kits, IReadOnlyList<ContextualController> controllers, float alpha, ViewTransform view)
     {
+        ArgumentNullException.ThrowIfNull(controllers);
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(kits);
         PitchGeometry pitch = world.Pitch;
@@ -97,9 +100,10 @@ internal sealed class WorldRenderer
             }
         }
 
-        if (selected is not null)
+        for (int i = 0; i < controllers.Count; i++)
         {
-            DrawSelection(batch, textures, selected, alpha, view, spriteScale, passCharge);
+            ContextualController controller = controllers[i];
+            DrawSelection(batch, textures, controller.Player, alpha, view, spriteScale, Charge(world, controller), SelectionColors[i % SelectionColors.Length]);
         }
     }
 
@@ -147,18 +151,29 @@ internal sealed class WorldRenderer
         batch.Draw(texture, position, source, Color.White, 0f, new Vector2(animation.Anchor[0], animation.Anchor[1]), scale, SpriteEffects.None, 0f);
     }
 
-    private static void DrawSelection(SpriteBatch batch, TextureStore textures, Player player, float alpha, ViewTransform view, float scale, float? passCharge)
+    /// <summary>Gauge value of a controller: pass aiming time or restart charge, or null.</summary>
+    private static float? Charge(FootballWorld world, ContextualController controller)
+    {
+        if (controller.Phase == ControlPhase.Holding && controller.AimSeconds > 0f)
+        {
+            return controller.AimSeconds / MathF.Max(0.01f, world.Controls.Pass.ChargeTime);
+        }
+
+        return controller.Phase == ControlPhase.SetPiece ? controller.SetPieceCharge : null;
+    }
+
+    private static void DrawSelection(SpriteBatch batch, TextureStore textures, Player player, float alpha, ViewTransform view, float scale, float? passCharge, Color color)
     {
         Texture2D marker = textures.Get(SelectionTexture);
         Vector2 top = view.ToScreen(Num.Vector2.Lerp(player.PreviousPosition, player.Position, alpha), MarkerHeight);
-        batch.Draw(marker, top, null, SelectionColor, 0f, new Vector2(marker.Width / 2f, marker.Height), scale, SpriteEffects.None, 0f);
+        batch.Draw(marker, top, null, color, 0f, new Vector2(marker.Width / 2f, marker.Height), scale, SpriteEffects.None, 0f);
         if (passCharge is float charge)
         {
             float width = 16f * scale;
             float height = 2f * scale;
             var bar = new RectangleF(top.X - (width / 2f), top.Y - (marker.Height * scale) - (4f * scale), width, height);
             Shapes.Rectangle(batch, textures.Pixel, bar, Color.Black * 0.6f);
-            Shapes.Rectangle(batch, textures.Pixel, bar with { Width = width * Math.Clamp(charge, 0f, 1f) }, SelectionColor);
+            Shapes.Rectangle(batch, textures.Pixel, bar with { Width = width * Math.Clamp(charge, 0f, 1f) }, color);
         }
     }
 

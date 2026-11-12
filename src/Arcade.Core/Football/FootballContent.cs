@@ -1,4 +1,7 @@
 using Arcade.Core.Content;
+using Arcade.Core.Football.AI;
+using Arcade.Core.Football.Match;
+using Arcade.Core.Football.Tactics;
 using Arcade.Core.Football.Pitch;
 using Arcade.Core.Football.Players;
 using Arcade.Core.Football.Teams;
@@ -14,8 +17,14 @@ public sealed class FootballContent
         PlayerRulesConfig playerRules,
         IReadOnlyDictionary<string, SurfaceDefinition> surfaces,
         IReadOnlyDictionary<string, PitchDefinition> pitches,
-        IReadOnlyDictionary<string, TeamDefinition> teams)
+        IReadOnlyDictionary<string, TeamDefinition> teams,
+        IReadOnlyDictionary<string, TacticDefinition> tactics,
+        IReadOnlyDictionary<string, RulesetDefinition> rulesets,
+        AiConfig ai)
     {
+        Tactics = tactics;
+        Rulesets = rulesets;
+        Ai = ai;
         Physics = physics;
         Controls = controls;
         PlayerRules = playerRules;
@@ -36,11 +45,25 @@ public sealed class FootballContent
 
     public IReadOnlyDictionary<string, TeamDefinition> Teams { get; }
 
+    public IReadOnlyDictionary<string, TacticDefinition> Tactics { get; }
+
+    public IReadOnlyDictionary<string, RulesetDefinition> Rulesets { get; }
+
+    public AiConfig Ai { get; }
+
     /// <summary>
     /// Returns a copy with some configuration replaced: match options (e.g. fatigue off) and tests use it.
     /// </summary>
     public FootballContent With(PhysicsConfig? physics = null, ControlConfig? controls = null, PlayerRulesConfig? playerRules = null) =>
-        new(physics ?? Physics, controls ?? Controls, playerRules ?? PlayerRules, Surfaces, Pitches, Teams);
+        new(physics ?? Physics, controls ?? Controls, playerRules ?? PlayerRules, Surfaces, Pitches, Teams, Tactics, Rulesets, Ai);
+
+    /// <summary>Copy with other match flow settings (tests, quick matches).</summary>
+    public FootballContent WithRuleset(RulesetDefinition ruleset)
+    {
+        ArgumentNullException.ThrowIfNull(ruleset);
+        var rulesets = new Dictionary<string, RulesetDefinition>(Rulesets, StringComparer.Ordinal) { [ruleset.Id] = ruleset };
+        return new(Physics, Controls, PlayerRules, Surfaces, Pitches, Teams, Tactics, rulesets, Ai);
+    }
 
     public static FootballContent Load(ContentRepository content)
     {
@@ -51,6 +74,9 @@ public sealed class FootballContent
         var surfaces = LoadCollection<SurfaceDefinition>(content, SurfaceDefinition.Folder, surface => surface.Id);
         var pitches = LoadCollection<PitchDefinition>(content, PitchDefinition.Folder, pitch => pitch.Id);
         var teams = LoadCollection<TeamDefinition>(content, TeamDefinition.Folder, team => team.Id);
+        var tactics = LoadCollection<TacticDefinition>(content, TacticDefinition.Folder, tactic => tactic.Id);
+        var rulesets = LoadCollection<RulesetDefinition>(content, RulesetDefinition.Folder, ruleset => ruleset.Id);
+        var ai = content.LoadData<AiConfig>(AiConfig.FileName);
 
         foreach (PitchDefinition pitch in pitches.Values)
         {
@@ -60,12 +86,20 @@ public sealed class FootballContent
             }
         }
 
-        if (teams.Count == 0 || pitches.Count == 0)
+        foreach (TeamDefinition team in teams.Values)
         {
-            throw new ContentException("At least one team and one pitch are required.");
+            if (!tactics.ContainsKey(team.Tactic))
+            {
+                throw new ContentException($"Team '{team.Id}' uses unknown tactic '{team.Tactic}' (known: {string.Join(", ", tactics.Keys)}).");
+            }
         }
 
-        return new FootballContent(physics, controls, playerRules, surfaces, pitches, teams);
+        if (teams.Count == 0 || pitches.Count == 0 || rulesets.Count == 0)
+        {
+            throw new ContentException("At least one team, one pitch and one ruleset are required.");
+        }
+
+        return new FootballContent(physics, controls, playerRules, surfaces, pitches, teams, tactics, rulesets, ai);
     }
 
     private static Dictionary<string, T> LoadCollection<T>(ContentRepository content, string folder, Func<T, string> idOf)

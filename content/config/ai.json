@@ -1,0 +1,58 @@
+{
+  // Computer-controlled players. Levels change reaction and accuracy, not the physics.
+  "defaultLevel": "normal",
+  "levels": {
+    "easy": {
+      "decisionInterval": 0.35,
+      "reactionSeconds": 0.35,
+      "chasers": 1,
+      "shootRange": 18.0,
+      "shotErrorDegrees": 9.0,
+      "passErrorDegrees": 9.0,
+      "holdSeconds": 0.7,
+      "restartDelaySeconds": 1.6,
+      "keeperReactionSeconds": 0.32
+    },
+    "normal": {
+      "decisionInterval": 0.22,
+      "reactionSeconds": 0.22,
+      "chasers": 1,
+      "shootRange": 22.0,
+      "shotErrorDegrees": 6.0,
+      "passErrorDegrees": 5.0,
+      "holdSeconds": 0.45,
+      "restartDelaySeconds": 1.1,
+      "keeperReactionSeconds": 0.22
+    },
+    "hard": {
+      "decisionInterval": 0.12,
+      "reactionSeconds": 0.12,
+      "chasers": 2,
+      "shootRange": 26.0,
+      "shotErrorDegrees": 3.5,
+      "passErrorDegrees": 2.5,
+      "holdSeconds": 0.3,
+      "restartDelaySeconds": 0.8,
+      "keeperReactionSeconds": 0.14
+    }
+  },
+  "positioning": {
+    "arriveRadius": 1.0,
+    "pressureRadius": 4.0,
+    "minPassDistance": 6.0,
+    "maxPassDistance": 32.0,
+    "laneClearance": 2.0,
+    "passScoreThreshold": 4.0,
+    "dribbleProbe": 5.0,
+    "touchlineMargin": 3.0
+  },
+  "keeper": {
+    "minLineDistance": 1.0,
+    "maxLineDistance": 4.0,
+    "advanceFactor": 0.06,
+    "rushBallSpeed": 9.0,
+    "holdSeconds": 1.2,
+    "kickSpeed": 25.0,
+    "kickLift": 10.0
+  }
+}

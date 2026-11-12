@@ -19,9 +19,12 @@ public enum ControlPhase
 
     /// <summary>Fire released with the joystick centred: ball at the feet, joystick dribbles away, fire shoots.</summary>
     AtFeet,
+
+    /// <summary>Taking a restart: the joystick aims, holding fire charges, releasing kicks.</summary>
+    SetPiece,
 }
 
-/// <summary>Last decision taken, for the debug overlay and tests.</summary>
+/// <summary>Last decision taken, for the debug overlay, the HUD and tests.</summary>
 public enum ControlDecision
 {
     None,
@@ -33,12 +36,14 @@ public enum ControlDecision
     DribbleAway,
     Chip,
     BallLost,
+    SetPiece,
 }
 
 /// <summary>
 /// Kick Off 2 style contextual control: one 8-way joystick and one fire button whose meaning depends on
 /// timing relative to the ball contact (see GAMEPLAY.md). Translates <see cref="ControlInput"/> into player
-/// intents and ball actions on the <see cref="FootballWorld"/>; it never moves the ball directly.
+/// intents and <see cref="BallActions"/>; it never moves the ball directly. In a match the controlled player
+/// changes (nearest to the ball): the button history and an armed trap carry over to the new player.
 /// </summary>
 public sealed class ContextualController
 {
@@ -49,6 +54,10 @@ public sealed class ContextualController
     private long _armedTick;
     private Direction8 _aimDirection;
     private long _aimStartTick;
+    private long _chargeStartTick = -1;
+    private int _aftertouchKickerId = Player.NoPlayer;
+    private SetPieceKind _setPiece;
+    private Vector2 _setPieceInward;
 
     public ContextualController(Player player, bool aftertouchEnabled)
     {
@@ -56,7 +65,7 @@ public sealed class ContextualController
         AftertouchEnabled = aftertouchEnabled;
     }
 
-    public Player Player { get; }
+    public Player Player { get; private set; }
 
     public ControlPhase Phase { get; private set; }
 
@@ -70,11 +79,22 @@ public sealed class ContextualController
     /// <summary>Aiming time of the pending pass (s), for the power gauge.</summary>
     public float AimSeconds { get; private set; }
 
+    /// <summary>Charge (0..1) of the pending restart kick, or null when not charging.</summary>
+    public float? SetPieceCharge { get; private set; }
+
+    /// <summary>Tick of the last fire press, used by the match to know whether the human reacted.</summary>
+    public long LastFirePressTick { get; private set; } = long.MinValue / 2;
+
     /// <summary>Reads one step of input and updates intents. Call once per step, before <see cref="FootballWorld.Step"/>.</summary>
     public void Update(ControlInput input, FootballWorld world)
     {
         ArgumentNullException.ThrowIfNull(world);
         bool pressed = input.Fire && !_previousFire;
+        if (pressed)
+        {
+            LastFirePressTick = world.Tick;
+        }
+
         Direction8 direction = input.Direction;
         Direction8 reversedFrom = DetectReversal(direction, world);
 
@@ -93,6 +113,9 @@ public sealed class ContextualController
             case ControlPhase.AtFeet:
                 UpdateAtFeet(world, pressed, direction);
                 break;
+            case ControlPhase.SetPiece:
+                UpdateSetPiece(world, input, pressed);
+                break;
         }
 
         ApplyAftertouch(world, direction);
@@ -107,21 +130,56 @@ public sealed class ContextualController
         _previousFire = input.Fire;
     }
 
-    /// <summary>Returns to the neutral phase (after a reset of the ball, a restart...).</summary>
+    /// <summary>
+    /// Hands control to another player. An armed trap (fire held while a pass travels) carries over so that
+    /// the receiver stops the ball; a ball kept at the feet does not (the new player does not have it).
+    /// </summary>
+    public void SetPlayer(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        if (ReferenceEquals(player, Player))
+        {
+            return;
+        }
+
+        Player.Intent = default;
+        Player = player;
+        if (Phase is ControlPhase.Holding or ControlPhase.AtFeet or ControlPhase.SetPiece)
+        {
+            Phase = ControlPhase.Free;
+        }
+
+        AimSeconds = 0f;
+        SetPieceCharge = null;
+    }
+
+    /// <summary>Starts a restart taken by the controlled player. <paramref name="inward"/> points into the pitch (zero = any direction).</summary>
+    public void BeginSetPiece(SetPieceKind kind, Vector2 inward)
+    {
+        Phase = ControlPhase.SetPiece;
+        _setPiece = kind;
+        _setPieceInward = inward;
+        _aimDirection = Direction8.None;
+        _chargeStartTick = -1;
+        SetPieceCharge = null;
+    }
+
+    /// <summary>Returns to the neutral phase (after a reset of the ball, a restart taken by the computer...).</summary>
     public void Reset()
     {
         Phase = ControlPhase.Free;
         Player.Intent = default;
         AimSeconds = 0f;
+        SetPieceCharge = null;
+        _chargeStartTick = -1;
     }
 
     private void UpdateFree(FootballWorld world, bool pressed, Direction8 direction, Direction8 reversedFrom)
     {
-        if (reversedFrom != Direction8.None && CanChip(world, reversedFrom))
+        if (reversedFrom != Direction8.None && BallActions.CanChip(world, Player, reversedFrom.ToVector()))
         {
-            ChipConfig chip = world.Controls.Chip;
-            world.Kick(Player, reversedFrom.ToVector(), chip.Speed, chip.Lift, KickKind.Chip, world.Controls.Aftertouch.ChipScale);
-            Decide(world, ControlDecision.Chip);
+            BallActions.Chip(world, Player, reversedFrom.ToVector());
+            Kicked(world, ControlDecision.Chip);
             return;
         }
 
@@ -130,7 +188,7 @@ public sealed class ContextualController
             return;
         }
 
-        if (CanShoot(world))
+        if (BallActions.CanShoot(world, Player))
         {
             Shoot(world, direction);
         }
@@ -183,12 +241,16 @@ public sealed class ContextualController
         {
             if (direction != Direction8.None)
             {
-                Pass(world, direction, AimSeconds);
+                PassConfig pass = world.Controls.Pass;
+                float charge = pass.ChargeTime > 0f ? AimSeconds / pass.ChargeTime : 0f;
+                BallActions.Pass(world, Player, direction.ToVector(), charge);
+                Player.Facing = direction;
+                Kicked(world, ControlDecision.Pass);
             }
             else
             {
                 Phase = ControlPhase.AtFeet;
-                KeepAtFeet(world);
+                BallActions.KeepAtFeet(world, Player, Player.Facing);
                 Decide(world, ControlDecision.BallAtFeet);
             }
 
@@ -196,7 +258,7 @@ public sealed class ContextualController
             return;
         }
 
-        KeepAtFeet(world);
+        BallActions.KeepAtFeet(world, Player, direction);
     }
 
     private void UpdateAtFeet(FootballWorld world, bool pressed, Direction8 direction)
@@ -214,34 +276,50 @@ public sealed class ContextualController
 
         if (direction != Direction8.None)
         {
-            // "The player will turn in the joystick direction and start dribbling in that direction."
-            DribbleConfig dribble = world.Controls.Dribble;
-            float runSpeed = MathF.Max(0f, Vector2.Dot(Player.Velocity, direction.ToVector()));
-            world.Kick(Player, direction.ToVector(), dribble.BaseSpeed + (dribble.RunFactor * runSpeed), 0f, KickKind.Dribble, 0f);
+            BallActions.DribbleAway(world, Player, direction.ToVector());
             Phase = ControlPhase.Free;
             Decide(world, ControlDecision.DribbleAway);
             return;
         }
 
-        KeepAtFeet(world);
+        BallActions.KeepAtFeet(world, Player, Direction8.None);
     }
 
-    /// <summary>The player stands on the ball: he stops running, faces the joystick, and his contacts are suspended.</summary>
-    private void KeepAtFeet(FootballWorld world)
+    private void UpdateSetPiece(FootballWorld world, ControlInput input, bool pressed)
     {
         Player.Intent.Move = Direction8.None;
-        Player.Intent.KeepsBall = true;
-        Direction8 facing = Player.Intent.Face != Direction8.None ? Player.Intent.Face : Player.Facing;
-        Vector2 holdPoint = Player.Position + (facing.ToVector() * world.Controls.Trap.HoldDistance);
-        world.HoldBall(Player, holdPoint);
+        Direction8 direction = input.Direction;
+        if (direction != Direction8.None && (_setPieceInward == Vector2.Zero || Vector2.Dot(direction.ToVector(), _setPieceInward) >= -0.01f))
+        {
+            _aimDirection = direction;
+        }
+
+        Direction8 aim = _aimDirection != Direction8.None ? _aimDirection : Player.Facing;
+        Player.Intent.Face = aim;
+        if (pressed)
+        {
+            _chargeStartTick = world.Tick;
+        }
+
+        if (_chargeStartTick >= 0)
+        {
+            float chargeTime = world.Controls.SetPieces.For(_setPiece).ChargeTime;
+            SetPieceCharge = Math.Clamp(world.SecondsSince(_chargeStartTick) / chargeTime, 0f, 1f);
+            if (!input.Fire)
+            {
+                BallActions.TakeSetPiece(world, Player, _setPiece, aim.ToVector(), SetPieceCharge.Value);
+                Player.Facing = aim;
+                SetPieceCharge = null;
+                _chargeStartTick = -1;
+                Kicked(world, ControlDecision.SetPiece);
+            }
+        }
     }
 
     private bool LostControl(FootballWorld world)
     {
         Direction8 facing = Player.Intent.Face != Direction8.None ? Player.Intent.Face : Player.Facing;
-        Vector2 holdPoint = Player.Position + (facing.ToVector() * world.Controls.Trap.HoldDistance);
-        float distance = Vector2.Distance(holdPoint, VectorMath.Horizontal(world.Ball.Position));
-        if (world.Ball.LastToucherId == Player.Id && distance <= world.Controls.Trap.LoseDistance)
+        if (BallActions.HasControl(world, Player, facing))
         {
             return false;
         }
@@ -252,50 +330,19 @@ public sealed class ContextualController
         return true;
     }
 
-    private bool CanShoot(FootballWorld world)
-    {
-        ShotConfig shot = world.Controls.Shot;
-        return world.Ball.LastToucherId == Player.Id
-            && world.SecondsSince(Player.LastTouchTick) <= shot.Window
-            && world.DistanceToBall(Player) <= shot.Reach
-            && world.Ball.Position.Z <= shot.MaxBallHeight;
-    }
-
-    private bool CanChip(FootballWorld world, Direction8 previousDirection)
-    {
-        ChipConfig chip = world.Controls.Chip;
-        Vector2 toBall = VectorMath.Horizontal(world.Ball.Position) - Player.Position;
-        return world.Ball.LastToucherId == Player.Id
-            && world.SecondsSince(Player.LastTouchTick) <= chip.PossessionWindow
-            && world.Ball.State.IsOnGround
-            && toBall.Length() <= chip.Reach
-            && Vector2.Dot(toBall, previousDirection.ToVector()) > 0f;
-    }
-
     private void Shoot(FootballWorld world, Direction8 direction)
     {
         Direction8 shotDirection = direction != Direction8.None ? direction : Player.Facing;
-        ShotConfig shot = world.Controls.Shot;
-        Vector2 unit = shotDirection.ToVector();
-        float power = world.Content.PlayerRules.Effects.ShootingPower.Evaluate(Player.Ratings.Shooting);
-        float run = MathF.Max(0f, Vector2.Dot(Player.Velocity, unit));
-        float speed = (shot.BaseSpeed * power) + (shot.RunFactor * run);
-        world.Kick(Player, unit, speed, shot.Lift, KickKind.Shot, world.Controls.Aftertouch.ShotScale);
+        BallActions.Shoot(world, Player, shotDirection.ToVector());
         Player.Facing = shotDirection;
-        Phase = ControlPhase.Free;
-        Decide(world, ControlDecision.Shot);
+        Kicked(world, ControlDecision.Shot);
     }
 
-    private void Pass(FootballWorld world, Direction8 direction, float aimSeconds)
+    private void Kicked(FootballWorld world, ControlDecision decision)
     {
-        PassConfig pass = world.Controls.Pass;
-        float charge = pass.ChargeTime > 0f ? Math.Clamp(aimSeconds / pass.ChargeTime, 0f, 1f) : 0f;
-        float power = world.Content.PlayerRules.Effects.PassingPower.Evaluate(Player.Ratings.Passing);
-        float speed = VectorMath.Lerp(pass.MinSpeed, pass.MaxSpeed, charge) * power;
-        world.Kick(Player, direction.ToVector(), speed, pass.Lift, KickKind.Pass, world.Controls.Aftertouch.PassScale);
-        Player.Facing = direction;
+        _aftertouchKickerId = Player.Id;
         Phase = ControlPhase.Free;
-        Decide(world, ControlDecision.Pass);
+        Decide(world, decision);
     }
 
     /// <summary>
@@ -322,14 +369,15 @@ public sealed class ContextualController
     }
 
     /// <summary>
-    /// Aftertouch: during a short window after his kick, the kicker's joystick bends the ball sideways
-    /// (relative to the kick direction). Forward input dips, backward input lifts, each only if its strength
-    /// is configured above zero; with the default data backward positions do nothing, as documented.
+    /// Aftertouch: during a short window after a kick made under this controller, the joystick bends the ball
+    /// sideways (relative to the kick direction), even if control has moved to another player since.
+    /// Forward input dips, backward input lifts, each only if its strength is configured above zero; with the
+    /// default data backward positions do nothing, as documented.
     /// </summary>
     private void ApplyAftertouch(FootballWorld world, Direction8 direction)
     {
         var window = world.Ball.Aftertouch;
-        if (!window.IsActive || window.PlayerId != Player.Id)
+        if (!window.IsActive || window.PlayerId != _aftertouchKickerId)
         {
             return;
         }

@@ -61,6 +61,13 @@ public sealed class PitchGeometry
 
     public Vector2 PenaltySpot(GoalEnd end) => new(0f, GoalLineY(end) - (Outward(end) * Definition.PenaltySpotDistance));
 
+    /// <summary>True when the point is inside the penalty area in front of the given goal (lines included).</summary>
+    public bool IsInPenaltyArea(Vector2 point, GoalEnd end)
+    {
+        float depth = (GoalLineY(end) - point.Y) * Outward(end);
+        return depth >= 0f && depth <= Definition.PenaltyAreaDepth && MathF.Abs(point.X) <= Definition.PenaltyAreaWidth / 2f;
+    }
+
     /// <summary>True when the point is inside the lines (lines belong to the pitch).</summary>
     public bool IsInsideLines(Vector2 point) => MathF.Abs(point.X) <= HalfWidth && MathF.Abs(point.Y) <= HalfLength;
 

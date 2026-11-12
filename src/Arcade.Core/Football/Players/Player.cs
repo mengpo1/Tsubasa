@@ -12,6 +12,9 @@ public enum BallTouchKind
     Trap,
     Deflection,
     Kick,
+
+    /// <summary>A goalkeeper caught the ball in his hands.</summary>
+    Catch,
 }
 
 /// <summary>Visible action, used by animation and debug display. Never drives the rules.</summary>
@@ -91,6 +94,12 @@ public sealed class Player
     public PlayerProfile Profile { get; }
 
     public PlayerRatings Ratings { get; }
+
+    /// <summary>Goal this player's team defends (null outside matches). Set by the match at each kick-off.</summary>
+    public Pitch.GoalEnd? DefendsEnd { get; set; }
+
+    /// <summary>True for the goalkeeper of a team in a match: he may use his hands in his own penalty area.</summary>
+    public bool IsGoalkeeper => Profile.Role == PlayerRole.Goalkeeper && DefendsEnd is not null;
 
     public Vector2 Position { get; set; }
 

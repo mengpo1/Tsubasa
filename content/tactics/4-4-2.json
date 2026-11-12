@@ -1,0 +1,155 @@
+{
+  "id": "4-4-2",
+  "nameKey": "tactic.442",
+  "ballFollow": {
+    "x": 0.4,
+    "y": 0.5
+  },
+  "attackShift": 0.12,
+  "slots": [
+    {
+      "role": "goalkeeper",
+      "home": [
+        0.0,
+        -0.94
+      ],
+      "kickOff": [
+        0.0,
+        -0.94
+      ],
+      "minY": -1.0,
+      "maxY": -0.75
+    },
+    {
+      "role": "defender",
+      "home": [
+        -0.68,
+        -0.58
+      ],
+      "kickOff": [
+        -0.6,
+        -0.55
+      ],
+      "minY": -0.92,
+      "maxY": 0.25
+    },
+    {
+      "role": "defender",
+      "home": [
+        -0.24,
+        -0.66
+      ],
+      "kickOff": [
+        -0.22,
+        -0.62
+      ],
+      "minY": -0.92,
+      "maxY": 0.0
+    },
+    {
+      "role": "defender",
+      "home": [
+        0.24,
+        -0.66
+      ],
+      "kickOff": [
+        0.22,
+        -0.62
+      ],
+      "minY": -0.92,
+      "maxY": 0.0
+    },
+    {
+      "role": "defender",
+      "home": [
+        0.68,
+        -0.58
+      ],
+      "kickOff": [
+        0.6,
+        -0.55
+      ],
+      "minY": -0.92,
+      "maxY": 0.25
+    },
+    {
+      "role": "midfielder",
+      "home": [
+        -0.66,
+        -0.12
+      ],
+      "kickOff": [
+        -0.6,
+        -0.25
+      ],
+      "minY": -0.75,
+      "maxY": 0.6
+    },
+    {
+      "role": "midfielder",
+      "home": [
+        -0.22,
+        -0.2
+      ],
+      "kickOff": [
+        -0.2,
+        -0.3
+      ],
+      "minY": -0.8,
+      "maxY": 0.5
+    },
+    {
+      "role": "midfielder",
+      "home": [
+        0.22,
+        -0.2
+      ],
+      "kickOff": [
+        0.2,
+        -0.3
+      ],
+      "minY": -0.8,
+      "maxY": 0.5
+    },
+    {
+      "role": "midfielder",
+      "home": [
+        0.66,
+        -0.12
+      ],
+      "kickOff": [
+        0.6,
+        -0.25
+      ],
+      "minY": -0.75,
+      "maxY": 0.6
+    },
+    {
+      "role": "forward",
+      "home": [
+        -0.2,
+        0.28
+      ],
+      "kickOff": [
+        0.0,
+        -0.01
+      ],
+      "minY": -0.4,
+      "maxY": 0.88,
+      "kickOffTaker": true
+    },
+    {
+      "role": "forward",
+      "home": [
+        0.2,
+        0.28
+      ],
+      "kickOff": [
+        0.22,
+        -0.04
+      ],
+      "minY": -0.4,
+      "maxY": 0.88
+    }
+  ]
+}

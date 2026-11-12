@@ -2,6 +2,7 @@
   "id": "reds",
   "name": "Redcliff Rovers",
   "shortName": "RED",
+  "tactic": "4-4-2",
   "kit": {
     "shirt": "#C8202C",
     "shorts": "#F2F2F2",
