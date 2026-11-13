@@ -75,6 +75,7 @@ public sealed class FootballContent
         var pitches = LoadCollection<PitchDefinition>(content, PitchDefinition.Folder, pitch => pitch.Id);
         var teams = LoadCollection<TeamDefinition>(content, TeamDefinition.Folder, team => team.Id);
         var tactics = LoadCollection<TacticDefinition>(content, TacticDefinition.Folder, tactic => tactic.Id);
+        LoadOriginalTactics(content, tactics);
         var rulesets = LoadCollection<RulesetDefinition>(content, RulesetDefinition.Folder, ruleset => ruleset.Id);
         var ai = content.LoadData<AiConfig>(AiConfig.FileName);
 
@@ -100,6 +101,29 @@ public sealed class FootballContent
         }
 
         return new FootballContent(physics, controls, playerRules, surfaces, pitches, teams, tactics, rulesets, ai);
+    }
+
+    /// <summary>Original Kick Off 2 tactic files (<c>tactics/*.tac</c>) provided by the player in a mod.</summary>
+    private static void LoadOriginalTactics(ContentRepository content, Dictionary<string, TacticDefinition> tactics)
+    {
+        foreach (string file in content.ListFiles(TacticDefinition.Folder, KickOff2TacticFile.Extension))
+        {
+            string id = Path.GetFileNameWithoutExtension(file);
+            if (tactics.ContainsKey(id))
+            {
+                throw new ContentException($"Tactic '{id}' is defined twice ({file} and a .json file).");
+            }
+
+            TacticDefinition tactic = KickOff2TacticFile.Read(File.ReadAllBytes(content.Resolve(file).FullPath), id);
+            var problems = new List<string>();
+            tactic.Validate(problems);
+            if (problems.Count > 0)
+            {
+                throw new ContentException($"Invalid tactic file '{file}': {string.Join("; ", problems)}");
+            }
+
+            tactics[id] = tactic;
+        }
     }
 
     private static Dictionary<string, T> LoadCollection<T>(ContentRepository content, string folder, Func<T, string> idOf)

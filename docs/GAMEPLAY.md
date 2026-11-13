@@ -7,9 +7,10 @@ Légende de provenance :
 
 | Étiquette | Signification |
 |---|---|
-| **[KO2]** | Documenté dans le manuel de Kick Off 2 |
-| **[FW]** | Documenté dans le manuel de The Final Whistle |
-| **[Estimé]** | Non documenté. Valeur estimée, réglable dans les données, à calibrer en jouant |
+| **[KO2]** | *Confirmé* : documenté dans le manuel de Kick Off 2 |
+| **[FW]** | *Confirmé* : documenté dans le manuel de The Final Whistle |
+| **[Reconstitué]** | Repris d'une implémentation de référence (Open Kick-Off) ou déduit de l'inspection des données originales. Non documenté par l'éditeur. Voir [REFERENCE_ANALYSIS.md](REFERENCE_ANALYSIS.md) |
+| **[Estimé]** | *Approximatif* : valeur de calibration choisie faute de données, réglable, à ajuster en jouant |
 | **[Choix]** | Décision de conception de ce projet (amélioration ou interprétation) |
 
 Les vidéos de référence n'ont **pas** pu être analysées dans l'environnement de développement (pas de lecture
@@ -20,8 +21,8 @@ Les valeurs citées sont celles de `content/config/*.json` au moment de l'écrit
 
 ## Terrain d'entraînement (lot 1)
 
-Un joueur humain, un ballon et deux buts sur un terrain de 105 × 68 m [Choix : dimensions réglementaires,
-dans `content/pitches/*.json`]. Les buts sont comptés et le ballon revient devant le joueur 1,5 s après un but.
+Un joueur humain, un ballon et deux buts sur un terrain de 76 × 116 yards, soit 69,5 × 106,1 m
+[Reconstitué : dimensions du terrain de Kick Off 2 relevées par Open Kick-Off, `content/pitches/*.json`]. Les buts sont comptés et le ballon revient devant le joueur 1,5 s après un but.
 **R** replace le ballon. **F3** change de terrain et donc de surface.
 
 ## Déplacements des joueurs
@@ -29,12 +30,14 @@ dans `content/pitches/*.json`]. Les buts sont comptés et le ballon revient deva
 - 8 directions de joystick [KO2]. Les sticks analogiques sont ramenés à 8 directions [Choix : mode historique].
 - L'orientation du joueur suit le joystick **immédiatement** [Choix : la réactivité d'abord]. La vitesse, elle,
   conserve son élan.
-- Modèle de vitesse [Estimé] (`config/physics.json › movement`) :
-  - composante dans la direction demandée : accélération 34 m/s² jusqu'à la vitesse de pointe (9 m/s pour un
-    joueur moyen) ;
-  - composante latérale : annulée par l'« adhérence » (48 m/s²). Les virages sont serrés mais pas instantanés ;
-  - joystick au centre ou inversé : freinage à 50 m/s². Un demi-tour est donc plus lent qu'un départ arrêté.
-- Mesures (testées) : vitesse de pointe atteinte en 0,1–0,45 s, arrêt d'un sprint en moins de 0,35 s et 1,5 m.
+- Vitesse de pointe d'un joueur moyen : 11,4 m/s [Reconstitué : 150 px/s à 12 px/yard dans Open Kick-Off]. C'est
+  bien plus rapide qu'un vrai footballeur, et c'est voulu : Kick Off 2 est un jeu très rapide.
+- Modèle d'inertie [Estimé] (`config/physics.json › movement`). Open Kick-Off n'a pas d'inertie : ses joueurs
+  partent et tournent instantanément.
+  - composante dans la direction demandée : accélération 43 m/s² jusqu'à la vitesse de pointe ;
+  - composante latérale : annulée par l'« adhérence » (60 m/s²). Les virages sont serrés mais pas instantanés ;
+  - joystick au centre ou inversé : freinage à 63 m/s². Un demi-tour est donc plus lent qu'un départ arrêté.
+- Mesures (testées) : vitesse de pointe atteinte en environ 0,27 s, arrêt d'un sprint en moins de 0,35 s et 1,5 m.
 - **Pace** module la vitesse de pointe (×0,88 à ×1,08) et l'accélération [Estimé ; l'effet de Pace sur la vitesse
   est KO2].
 - **Fatigue** : l'énergie baisse en course rapide et remonte en marchant. Une énergie basse réduit la vitesse
@@ -46,8 +49,13 @@ dans `content/pitches/*.json`]. Les buts sont comptés et le ballon revient deva
 
 Objet physique indépendant : il n'est jamais attaché au joueur [KO2 : « the ball travels in front of the player »].
 
-- Position 3D, vitesse 3D, gravité 9,81 m/s², traînée de l'air, rebonds (restitution 0,55, frottement 0,85),
-  roulement (décélération constante 1,4 m/s² plus 0,35/s proportionnelle à la vitesse), arrêt sous 0,1 m/s [Estimé].
+- Position 3D, vitesse 3D, gravité 9,81 m/s².
+- Rebonds : le ballon garde ¾ de sa vitesse verticale et 31/32 de sa vitesse horizontale [Reconstitué : Open
+  Kick-Off, `Ball.update`. Ces fractions, ¼ et 1/32, correspondent à des décalages binaires typiques du 68000, ce
+  qui laisse penser qu'elles viennent du jeu ; ce n'est pas prouvé].
+- Traînée de l'air et roulement : décélération constante de 1,4 m/s² plus 0,35/s proportionnelle à la vitesse,
+  arrêt sous 0,1 m/s [Estimé]. Le modèle d'Open Kick-Off (une traînée unique de 0,81/s, aussi en l'air, avec une
+  gravité appliquée deux fois) n'est pas cohérent et n'a pas été repris.
 - Vent : poussée constante sur le ballon en l'air (0,12 m/s² par m/s de vent), très faible au sol [Choix ; KO2 a
   une option de vent sans en décrire l'effet]. Le moteur le gère, mais aucune option de jeu ne l'active encore.
 - Collisions : poteaux (cylindres verticaux), barre (cylindre horizontal), filets (boîte ouverte côté terrain,
@@ -80,8 +88,8 @@ est documenté.
 
 | Geste | Comment | Provenance |
 |---|---|---|
-| Dribble | Courir dans le ballon sans bouton : il part dans la direction du joueur à `1,2 + 1,12 × vitesse` m/s. Il s'éloigne puis le joueur le rattrape. | Principe [KO2] ; valeurs [Estimé] |
-| Perte de balle | Un virage serré ou un ballon trop rapide (écart > 9,5 m/s) font perdre le ballon : il rebondit sur le joueur. Un ballon derrière le joueur est dévié, pas poussé. | Conséquence du modèle [Choix] |
+| Dribble | Courir dans le ballon sans bouton : il part dans la direction du joueur à `2,29 + 1,125 × vitesse` m/s. Il s'éloigne puis le joueur le rattrape. Contact à moins de 0,61 m. | Principe [KO2] ; formule et rayon [Reconstitué : Open Kick-Off, `MatchScreen.checkCollisions`, 30 px/s et 8 px] |
+| Perte de balle | Un virage serré ou un ballon trop rapide (écart > 13 m/s) font perdre le ballon : il rebondit sur le joueur. Un ballon derrière le joueur est dévié, pas poussé. | Conséquence du modèle [Choix] |
 | Tir | Bouton pressé dans les 0,3 s **après** une touche, ballon à moins de 1,7 m et à moins de 0,8 m de haut. Vitesse 22 m/s × (0,85 à 1,1 selon Shooting) + 0,5 × la vitesse de course, élévation 4 m/s, dans la direction du joystick. | Règle [KO2] ; fenêtre, portée et puissance [Estimé] |
 | Contrôle (amorti) | Bouton pressé **avant** le contact et maintenu : au contact (ballon à moins de 1,3 m de haut), le ballon est arrêté. Le joueur s'immobilise dessus et le ballon reste physique, ramené vers ses pieds. | Règle [KO2] |
 | Passe | Ballon contrôlé, bouton maintenu : le joystick vise, relâcher passe. Puissance de 9 à 24 m/s selon le temps de visée (0,6 s pour la pleine puissance), × Passing. | Règle [KO2] ; puissance selon la visée [Choix : non documenté] |
@@ -183,17 +191,29 @@ Choix d'interprétation à noter :
 - Mesure : sur six matchs ordinateur contre ordinateur de 2 × 3 minutes, scores de 0-0 à 3-0, des passes, des
   tirs, des parades, des touches, des corners et des six mètres, aucun blocage.
 
-Tactiques fournies : 4-4-2 et 4-3-3 (`content/tactics/`). Les positions sont des [Estimé] : les manuels ne
-donnent pas les tactiques d'origine. Les positions distinctes en attaque et en défense de Final Whistle viendront
-au lot 4.
+### Tactiques
+
+- Modèle de Kick Off 2 : chaque joueur de champ a une position pour chacune des **12 zones du ballon** (3 colonnes
+  × 4 rangées), plus 8 situations (coups d'envoi, six mètres, corners). Le gardien est géré à part [KO2 : « the
+  players are positioned depending on the position of the ball » ; format Reconstitué : Open Kick-Off
+  `Tactic.java` et Tactical Editor].
+- Pas d'interpolation : quand le ballon change de zone, les joueurs courent vers leur nouvelle position
+  [Reconstitué : comportement des deux implémentations de référence].
+- Final Whistle : les positions dépendent aussi de l'attaque ou de la défense [FW]. Une tactique peut fournir un
+  jeu de positions `attack`, utilisé quand l'équipe a le ballon.
+- Tactiques fournies : 4-4-2 et 4-3-3, avec des positions originales [Estimé]. Les fichiers `.tac` du jeu
+  original peuvent être utilisés via un mod (voir MODDING.md).
 
 ## Caméra et affichage
 
-- La caméra suit le ballon avec une anticipation de 0,3 s sur sa vitesse et un lissage exponentiel. Elle reste
-  dans l'enceinte du terrain. Elle est indépendante de la simulation [Choix ; le comportement exact de KO2 n'est
-  pas documenté].
-- Vue : 640×360 pixels virtuels à 16 px/m, soit environ 40 × 22 m visibles, à peu près le cadrage serré de
-  l'original. Zoom réglable avec **[ ]**.
+- La caméra reste centrée sur le ballon, avec un lissage très court et sans anticipation. Elle reste dans
+  l'enceinte du terrain [Reconstitué : Open Kick-Off centre la caméra sur le ballon pendant le jeu]. Elle est
+  indépendante de la simulation.
+- Hauteur affichée : le ballon monte à l'écran de la moitié de son altitude réelle [Reconstitué : `Ball.render`
+  d'Open Kick-Off]. Les buts sont projetés de la même façon.
+- Vue : 640×360 pixels virtuels à 16 px/m, soit environ 40 × 22 m visibles. L'original, en 320 pixels de large à
+  12 px/yard, montre environ 24 × 15 m. Le cadrage plus large est un [Choix] pour l'écran 16:9 ; le zoom se règle
+  avec **[ ]**.
 - Radar (scanner) : terrain miniature avec joueurs, ballon et zone visible [KO2 : scanner].
 - Tableau : score et minute de jeu en match ; équipe, buts et chronomètre en entraînement.
 - Bandeaux : coup d'envoi, touche, corner, six mètres, but (avec le buteur), mi-temps, fin du match.
@@ -202,8 +222,9 @@ au lot 4.
 
 Ces valeurs font l'essentiel des sensations. Toutes se règlent dans les données et se rechargent avec F5 :
 
-1. `controls.json › dribble` : distance à laquelle le ballon court devant le joueur. Actuellement environ 1 m
-   d'avance à pleine vitesse, une touche toutes les 0,95 s.
+1. `controls.json › dribble` et `physics.json › ball.rolling*` : distance à laquelle le ballon court devant le
+   joueur. Actuellement le centre du ballon s'éloigne jusqu'à 1,7 m du joueur à pleine vitesse, avec une touche
+   toutes les 1,27 s environ.
 2. `controls.json › shot.window` et `shot.reach` : difficulté du timing du tir.
 3. `physics.json › movement` : nervosité (accélération, adhérence, freinage).
 4. `physics.json › ball.rollingResistance` et `rollingDrag` : portée des passes et des tirs au sol.

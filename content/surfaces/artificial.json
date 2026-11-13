@@ -3,7 +3,7 @@
   "nameKey": "surface.artificial",
   "rollingResistanceScale": 0.75,
   "rollingDragScale": 0.85,
-  "bounceRestitutionScale": 1.35,
+  "bounceRestitutionScale": 1.15,
   "bounceFrictionScale": 1.05,
   "airDragScale": 1.0,
   "bounceDeviationDegrees": 0,

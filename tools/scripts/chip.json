@@ -1,6 +1,6 @@
 {
   "steps": [
-    { "from": 0, "to": 72, "direction": "up" },
-    { "from": 72, "to": 80, "direction": "down" }
+    { "from": 0, "to": 77, "direction": "up" },
+    { "from": 77, "to": 85, "direction": "down" }
   ]
 }

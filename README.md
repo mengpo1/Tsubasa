@@ -106,7 +106,7 @@ Le jeu peut rejouer une séquence d'entrées (60 Hz fixes) et enregistrer des ca
 sans clavier (par exemple sous Linux avec `xvfb-run`) :
 
 ```bash
-dotnet run --project src/Arcade.Desktop -- --mode training --script tools/scripts/dribble-shot-goal.json --capture-ticks 300,384,400 --exit-tick 410
+dotnet run --project src/Arcade.Desktop -- --mode training --script tools/scripts/dribble-shot-goal.json --capture-ticks 300,320,345 --exit-tick 350
 ```
 
 Les images sont écrites dans `artifacts/screenshots/`. Autres scripts : `trap-and-pass.json` et `chip.json`

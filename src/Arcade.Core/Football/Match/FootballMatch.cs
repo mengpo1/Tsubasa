@@ -6,6 +6,7 @@ using Arcade.Core.Football.Ball;
 using Arcade.Core.Football.Control;
 using Arcade.Core.Football.Pitch;
 using Arcade.Core.Football.Players;
+using Arcade.Core.Football.Tactics;
 using Arcade.Core.Football.Teams;
 using Arcade.Core.Input;
 
@@ -188,12 +189,12 @@ public sealed class FootballMatch
     {
         TeamDefinition definition = Find(content.Teams, teamId, "team");
         var tactic = Find(content.Tactics, definition.Tactic, "tactic");
-        if (definition.Players.Count < tactic.Slots.Count)
+        if (definition.Players.Count < MatchTeam.StartingPlayers)
         {
-            throw new ContentException($"Team '{teamId}' has {definition.Players.Count} players; {tactic.Slots.Count} are needed.");
+            throw new ContentException($"Team '{teamId}' has {definition.Players.Count} players; {MatchTeam.StartingPlayers} are needed.");
         }
 
-        return new MatchTeam(index, definition, tactic, definition.Players.Take(tactic.Slots.Count).Select(profile => World.AddPlayer(index, profile)));
+        return new MatchTeam(index, definition, tactic, definition.Players.Take(MatchTeam.StartingPlayers).Select(profile => World.AddPlayer(index, profile)));
     }
 
     private void Enter(MatchPhase phase)
@@ -236,10 +237,9 @@ public sealed class FootballMatch
         int kicking = CurrentRestart?.TeamIndex ?? _firstKickOffTeam;
         foreach (MatchTeam team in _teams)
         {
-            for (int slot = 0; slot < team.Players.Count; slot++)
+            foreach (Player player in team.Players)
             {
-                Player player = team.Players[slot];
-                Vector2 target = team.KickOffPosition(slot, team.Index == kicking, World.Pitch);
+                Vector2 target = team.KickOffPosition(player, team.Index == kicking, World.Pitch);
                 TeamAi.MoveTo(player, target, 0.5f, Vector2.Zero);
                 allArrived &= Vector2.Distance(player.Position, target) <= SetupArriveDistance;
             }
@@ -253,10 +253,10 @@ public sealed class FootballMatch
         int kicking = CurrentRestart!.Value.TeamIndex;
         foreach (MatchTeam team in _teams)
         {
-            for (int slot = 0; slot < team.Players.Count; slot++)
+            foreach (Player player in team.Players)
             {
-                Vector2 position = team.KickOffPosition(slot, team.Index == kicking, World.Pitch);
-                team.Players[slot].PlaceAt(position, Direction8Extensions.FromVector(team.AttackDirection, 1e-3f));
+                Vector2 position = team.KickOffPosition(player, team.Index == kicking, World.Pitch);
+                player.PlaceAt(position, Direction8Extensions.FromVector(team.AttackDirection, 1e-3f));
             }
         }
     }
@@ -358,9 +358,9 @@ public sealed class FootballMatch
         foreach (MatchTeam team in _teams)
         {
             TeamAi ai = _ai[team.Index];
-            for (int slot = 0; slot < team.Players.Count; slot++)
+            bool taking = team.Index == restart.TeamIndex;
+            foreach (Player player in team.Players)
             {
-                Player player = team.Players[slot];
                 if (ReferenceEquals(player, taker))
                 {
                     continue;
@@ -372,7 +372,12 @@ public sealed class FootballMatch
                     continue;
                 }
 
-                Vector2 target = team.FormationTarget(slot, restart.Spot, team.Index == restart.TeamIndex, World.Pitch);
+                Vector2 target = restart.Kind switch
+                {
+                    SetPieceKind.GoalKick => team.SituationTarget(player, taking ? TacticSituation.GoalKickOwn : TacticSituation.GoalKickOpponent, World.Pitch),
+                    SetPieceKind.Corner => team.SituationTarget(player, team.CornerSituation(restart.Spot, World.Pitch), World.Pitch),
+                    _ => team.TacticTarget(player, restart.Spot, taking, World.Pitch),
+                };
                 if (team.Index != restart.TeamIndex && Vector2.Distance(target, restart.Spot) < distance)
                 {
                     Vector2 away = target - restart.Spot;

@@ -7,15 +7,19 @@ using Arcade.Core.Football.Teams;
 namespace Arcade.Core.Football.Match;
 
 /// <summary>
-/// A team during a match: its eleven players (slot i = i-th player of the team file), its tactic, its score and
-/// the goal it attacks. Converts between the normalised tactic frame and world coordinates.
+/// A team during a match: its eleven starters, its tactic, its score and the goal it attacks.
+/// The goalkeeper is the starter with the goalkeeper role; the other ten are the outfield players of the tactic,
+/// in team-file order (as the shirts 2 to 11 of a Kick Off 2 tactic file).
 /// </summary>
 public sealed class MatchTeam
 {
-    /// <summary>Normalised margin kept between formation targets and the touchlines.</summary>
-    private const float MaxNormalizedX = 0.94f;
+    public const int StartingPlayers = 11;
+
+    /// <summary>Distance of the keeper from his goal line at kick-off (m).</summary>
+    private const float KeeperKickOffDepth = 1.5f;
 
     private readonly List<Player> _players;
+    private readonly List<Player> _outfield;
 
     public MatchTeam(int index, TeamDefinition definition, TacticDefinition tactic, IEnumerable<Player> players)
     {
@@ -23,12 +27,15 @@ public sealed class MatchTeam
         Definition = definition ?? throw new ArgumentNullException(nameof(definition));
         Tactic = tactic ?? throw new ArgumentNullException(nameof(tactic));
         _players = [.. players];
-        if (_players.Count != tactic.Slots.Count)
+        List<Player> keepers = _players.FindAll(p => p.Profile.Role == PlayerRole.Goalkeeper);
+        if (_players.Count != StartingPlayers || keepers.Count != 1)
         {
-            throw new ArgumentException($"Team '{definition.Id}' needs {tactic.Slots.Count} players for tactic '{tactic.Id}'.", nameof(players));
+            throw new ArgumentException($"Team '{definition.Id}' must start with {StartingPlayers} players including exactly one goalkeeper.", nameof(players));
         }
 
-        Goalkeeper = _players[tactic.Slots.ToList().FindIndex(slot => slot.Role == PlayerRole.Goalkeeper)];
+        Goalkeeper = keepers[0];
+        _outfield = _players.FindAll(p => p != Goalkeeper);
+        KickOffTaker = _outfield.MinBy(p => Distance(Tactic.Players[_outfield.IndexOf(p)].KickOffOwn, Tactic.Units.Width / 2f, Tactic.Units.Length / 2f))!;
     }
 
     public int Index { get; }
@@ -39,7 +46,13 @@ public sealed class MatchTeam
 
     public IReadOnlyList<Player> Players => _players;
 
+    /// <summary>The ten outfield players, in tactic order.</summary>
+    public IReadOnlyList<Player> Outfield => _outfield;
+
     public Player Goalkeeper { get; }
+
+    /// <summary>Outfield player whose own kick-off position is nearest to the centre spot.</summary>
+    public Player KickOffTaker { get; }
 
     public int Goals { get; internal set; }
 
@@ -53,8 +66,6 @@ public sealed class MatchTeam
 
     public bool Owns(Player player) => player is not null && player.TeamIndex == Index;
 
-    public int SlotOf(Player player) => _players.IndexOf(player);
-
     public void SetAttackedGoal(GoalEnd end)
     {
         Attacks = end;
@@ -64,7 +75,7 @@ public sealed class MatchTeam
         }
     }
 
-    /// <summary>World position of a normalised tactic point for this team.</summary>
+    /// <summary>World position of a normalised point of the team frame (x -1..1 from the left touchline, y -1..1 from the own goal line).</summary>
     public Vector2 ToWorld(float x, float y, PitchGeometry pitch)
     {
         ArgumentNullException.ThrowIfNull(pitch);
@@ -79,27 +90,66 @@ public sealed class MatchTeam
         return new Vector2(world.X / (a * pitch.HalfWidth), -world.Y / (a * pitch.HalfLength));
     }
 
-    /// <summary>Where a slot stands for a given ball position: home position shifted with the ball, inside its depth limits.</summary>
-    public Vector2 FormationTarget(int slot, Vector2 ball, bool inPossession, PitchGeometry pitch)
+    /// <summary>World position of a tactic point (tactic units, team frame).</summary>
+    public Vector2 FromTacticUnits(IReadOnlyList<float> point, PitchGeometry pitch)
     {
-        TacticSlot s = Tactic.Slots[slot];
-        Vector2 b = ToNormalized(ball, pitch);
-        float x = s.Home[0] + (b.X * Tactic.BallFollow.X);
-        float y = s.Home[1] + (b.Y * Tactic.BallFollow.Y) + (inPossession ? Tactic.AttackShift : 0f);
-        return ToWorld(Math.Clamp(x, -MaxNormalizedX, MaxNormalizedX), Math.Clamp(y, s.MinY, s.MaxY), pitch);
+        ArgumentNullException.ThrowIfNull(point);
+        return ToWorld(((point[0] / Tactic.Units.Width) * 2f) - 1f, ((point[1] / Tactic.Units.Length) * 2f) - 1f, pitch);
     }
 
-    /// <summary>Kick-off position of a slot. The defending team stays outside the centre circle.</summary>
-    public Vector2 KickOffPosition(int slot, bool kicking, PitchGeometry pitch)
+    /// <summary>Tactic zone (0..11) of a ball position, seen from this team.</summary>
+    public int BallZone(Vector2 ball, PitchGeometry pitch)
     {
+        Vector2 n = ToNormalized(ball, pitch);
+        return TacticDefinition.ZoneOf((n.X + 1f) / 2f, (n.Y + 1f) / 2f);
+    }
+
+    /// <summary>Where an outfield player stands for the zone the ball is in (attack set while in possession, if the tactic has one).</summary>
+    public Vector2 TacticTarget(Player player, Vector2 ball, bool inPossession, PitchGeometry pitch) =>
+        FromTacticUnits(PositionsOf(player).ZonePosition(BallZone(ball, pitch), inPossession), pitch);
+
+    public Vector2 SituationTarget(Player player, TacticSituation situation, PitchGeometry pitch) =>
+        FromTacticUnits(PositionsOf(player).Situation(situation), pitch);
+
+    /// <summary>Corner situation for a corner taken at <paramref name="spot"/>, from this team's point of view.</summary>
+    public TacticSituation CornerSituation(Vector2 spot, PitchGeometry pitch)
+    {
+        bool ownEnd = Vector2.Dot(spot, AttackDirection) < 0f;
+        bool left = ToNormalized(spot, pitch).X < 0f;
+        return (ownEnd, left) switch
+        {
+            (true, true) => TacticSituation.CornerOwnLeft,
+            (true, false) => TacticSituation.CornerOwnRight,
+            (false, true) => TacticSituation.CornerOpponentLeft,
+            _ => TacticSituation.CornerOpponentRight,
+        };
+    }
+
+    /// <summary>
+    /// Kick-off position from the tactic, made legal whatever the data: everybody in his own half, the taker behind
+    /// the ball, the defending team outside the centre circle.
+    /// </summary>
+    public Vector2 KickOffPosition(Player player, bool kicking, PitchGeometry pitch)
+    {
+        ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(pitch);
-        TacticSlot s = Tactic.Slots[slot];
-        if (kicking && s.KickOffTaker)
+        if (player == Goalkeeper)
+        {
+            return pitch.GoalCentre(Defends) + (AttackDirection * KeeperKickOffDepth);
+        }
+
+        if (kicking && player == KickOffTaker)
         {
             return -AttackDirection * 0.5f;
         }
 
-        Vector2 position = ToWorld(s.KickOff[0], s.KickOff[1], pitch);
+        Vector2 position = SituationTarget(player, kicking ? TacticSituation.KickOffOwn : TacticSituation.KickOffOpponent, pitch);
+        float forward = Vector2.Dot(position, AttackDirection);
+        if (forward > -0.5f)
+        {
+            position -= AttackDirection * (forward + 0.5f);
+        }
+
         float clearance = pitch.Definition.CentreCircleRadius + 1f;
         if (!kicking && position.Length() < clearance)
         {
@@ -110,5 +160,14 @@ public sealed class MatchTeam
         return position;
     }
 
-    public Player KickOffTaker => _players[Tactic.Slots.ToList().FindIndex(slot => slot.KickOffTaker)];
+    private TacticPlayer PositionsOf(Player player)
+    {
+        int index = _outfield.IndexOf(player);
+        return index >= 0
+            ? Tactic.Players[index]
+            : throw new ArgumentException($"{player.Profile.Name} is not an outfield player of team {Index}.", nameof(player));
+    }
+
+    private static float Distance(IReadOnlyList<float> point, float x, float y) =>
+        MathF.Sqrt(((point[0] - x) * (point[0] - x)) + ((point[1] - y) * (point[1] - y)));
 }

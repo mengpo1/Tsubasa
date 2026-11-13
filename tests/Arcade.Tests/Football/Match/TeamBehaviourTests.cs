@@ -14,20 +14,40 @@ namespace Arcade.Tests.Football.Match;
 public sealed class TeamBehaviourTests
 {
     [Fact]
-    public void Formation_targets_are_mirrored_between_teams_and_follow_the_ball()
+    public void Tactic_targets_depend_on_the_ball_zone_and_are_mirrored_between_teams()
     {
         var harness = new MatchHarness();
         PitchGeometry pitch = harness.World.Pitch;
         MatchTeam home = harness.Match.Teams[0];
         MatchTeam away = harness.Match.Teams[1];
-        Vector2 homeLeftBack = home.FormationTarget(1, Vector2.Zero, false, pitch);
-        Assert.True(Vector2.Dot(homeLeftBack, home.AttackDirection) < 0f, "defenders stand in their own half");
-        Assert.Equal(home.ToWorld(0.5f, 0.5f, pitch), -away.ToWorld(0.5f, 0.5f, pitch));
+        Player defender = home.Outfield[1];
+        Player midfielder = home.Outfield[5];
 
-        Vector2 ballForward = home.AttackDirection * 30f;
-        Vector2 shifted = home.FormationTarget(6, ballForward, false, pitch);
-        Assert.True(Vector2.Dot(shifted - home.FormationTarget(6, Vector2.Zero, false, pitch), home.AttackDirection) > 5f, "the block moves up with the ball");
-        Assert.True(Vector2.Dot(home.FormationTarget(6, ballForward, true, pitch) - shifted, home.AttackDirection) > 0f, "and further when the team has the ball");
+        Vector2 ownHalf = -home.AttackDirection * 30f;
+        Vector2 opponentHalf = home.AttackDirection * 30f;
+        Assert.True(Vector2.Dot(home.TacticTarget(defender, Vector2.Zero, false, pitch), home.AttackDirection) < 0f, "defenders stand in their own half");
+        Assert.True(Vector2.Dot(home.TacticTarget(midfielder, opponentHalf, false, pitch) - home.TacticTarget(midfielder, ownHalf, false, pitch), home.AttackDirection) > 5f,
+            "the block moves up when the ball is in another zone");
+
+        // Same zone, same target: positions are not interpolated inside a zone.
+        Vector2 a = home.TacticTarget(midfielder, opponentHalf, false, pitch);
+        Vector2 b = home.TacticTarget(midfielder, opponentHalf + new Vector2(1f, 2f), false, pitch);
+        Assert.Equal(a, b);
+
+        // Mirror: the same tactic point is symmetric for the two teams.
+        Assert.Equal(home.ToWorld(0.5f, 0.5f, pitch), -away.ToWorld(0.5f, 0.5f, pitch));
+        Assert.Equal(home.BallZone(opponentHalf, pitch), away.BallZone(-opponentHalf, pitch));
+    }
+
+    [Fact]
+    public void The_attack_set_is_used_while_the_team_has_the_ball()
+    {
+        var harness = new MatchHarness();
+        PitchGeometry pitch = harness.World.Pitch;
+        MatchTeam home = harness.Match.Teams[0];
+        Player forward = home.Outfield[9];
+        Vector2 ball = Vector2.Zero;
+        Assert.True(Vector2.Dot(home.TacticTarget(forward, ball, true, pitch) - home.TacticTarget(forward, ball, false, pitch), home.AttackDirection) > 0f);
     }
 
     [Fact]

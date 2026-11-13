@@ -1,7 +1,7 @@
 {
   "steps": [
-    { "from": 0, "to": 356, "direction": "up" },
-    { "from": 356, "to": 359, "direction": "up", "fire": true },
-    { "from": 359, "to": 380, "direction": "upLeft" }
+    { "from": 0, "to": 306, "direction": "up" },
+    { "from": 306, "to": 309, "direction": "up", "fire": true },
+    { "from": 309, "to": 330, "direction": "upLeft" }
   ]
 }

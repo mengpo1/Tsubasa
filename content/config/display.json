@@ -4,11 +4,11 @@
   "virtualHeight": 360,
   "windowScale": 2,
   "pixelsPerMetre": 16,
-  "heightScale": 0.85,
+  "heightScale": 0.5,
   "camera": {
-    "lookAheadSeconds": 0.3,
+    "lookAheadSeconds": 0.0,
     "maxLookAhead": 7.0,
-    "smoothing": 6.0,
+    "smoothing": 20.0,
     "minZoom": 0.5,
     "maxZoom": 2.0,
     "zoomStep": 0.25

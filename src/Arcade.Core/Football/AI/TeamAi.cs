@@ -98,7 +98,7 @@ public sealed class TeamAi
             else
             {
                 Vector2 ball = VectorMath.Horizontal(world.Ball.Position);
-                UpdatePositioning(match, player, brain, Team.FormationTarget(Team.SlotOf(player), ball, inPossession, world.Pitch), ball);
+                UpdatePositioning(match, player, brain, Team.TacticTarget(player, ball, inPossession, world.Pitch), ball);
             }
         }
     }

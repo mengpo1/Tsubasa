@@ -1,5 +1,5 @@
 {
-  // Units: metres, seconds. All values are estimates calibrated by play, not original data.
+  // Units: metres, seconds. Provenance of each value: docs/REFERENCE_ANALYSIS.md (confirmed / reconstituted / approximate).
   "stepsPerSecond": 60,
   "gravity": 9.81,
   "ball": {
@@ -9,8 +9,8 @@
     "rollingResistance": 1.4,
     "rollingDrag": 0.35,
     "stopSpeed": 0.1,
-    "bounceRestitution": 0.55,
-    "bounceFriction": 0.85,
+    "bounceRestitution": 0.75,
+    "bounceFriction": 0.969,
     "minBounceSpeed": 1.0,
     "windAirborneFactor": 0.12,
     "windGroundFactor": 0.01,
@@ -20,7 +20,7 @@
   "goalFrame": {
     "postRestitution": 0.6,
     "postFriction": 0.9,
-    "netRestitution": 0.1,
+    "netRestitution": 0.05,
     "netFriction": 0.35,
     "outerNetRestitution": 0.25
   },
@@ -29,10 +29,10 @@
     "friction": 0.8
   },
   "movement": {
-    "maxSpeed": 9.0,
-    "acceleration": 34.0,
-    "braking": 50.0,
-    "turnGrip": 48.0,
+    "maxSpeed": 11.4,
+    "acceleration": 43.0,
+    "braking": 63.0,
+    "turnGrip": 60.0,
     "bodyRadius": 0.4
   }
 }

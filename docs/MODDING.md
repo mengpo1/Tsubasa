@@ -148,8 +148,9 @@ Un fichier absent ou un id inconnu est signalé dans le journal et remplacé par
 ```
 
 - `role` : `goalkeeper`, `defender`, `midfielder` ou `forward`.
-- `tactic` : id d'un fichier de `tactics/`. Les onze premiers joueurs occupent les onze postes de la tactique,
-  dans l'ordre. Le joueur placé au poste de gardien de la tactique garde les buts.
+- `tactic` : id d'un fichier de `tactics/` (`.json` ou `.tac`). Les onze premiers joueurs de la liste sont
+  titulaires. Celui qui a le rôle `goalkeeper` garde les buts ; les dix autres, dans l'ordre, occupent les dix
+  postes de la tactique.
 - Il faut au moins onze joueurs pour jouer un match.
 - Les attributs sont sur l'échelle de `config/players.json › ratingScale` (0 à 100 par défaut). Leurs effets
   (multiplicateurs entre la pire et la meilleure note) se règlent dans le même fichier.
@@ -157,27 +158,51 @@ Un fichier absent ou un id inconnu est signalé dans le journal et remplacé par
 
 ## Tactiques
 
-`tactics/<id>.json` décrit une formation dans un repère normalisé propre à l'équipe : x de -1 (touche gauche) à 1
-(touche droite) quand l'équipe attaque vers le haut, y de -1 (sa ligne de but) à 1 (la ligne adverse).
+Les tactiques suivent le modèle de **Kick Off 2**. Pour chacun des 10 joueurs de champ (les joueurs 2 à 11 de
+l'équipe ; le gardien est géré à part), le fichier donne une position par **zone du ballon**, plus 8 situations
+particulières. Les joueurs vont à la position de la zone où se trouve le ballon, sans interpolation.
+
+- Zones : le terrain est découpé en 3 colonnes × 4 rangées, vues depuis l'équipe. Elles sont numérotées par
+  colonne : 0 à 3 pour la colonne gauche (de son propre but vers le but adverse), 4 à 7 pour le centre, 8 à 11
+  pour la droite.
+- Coordonnées en unités de tactique (`units`, 912 × 1392 dans Kick Off 2, soit 12 par yard). L'origine est le
+  poteau de corner gauche du camp de l'équipe ; x va vers la touche droite, y vers le but adverse.
 
 ```json
 {
   "id": "4-4-2",
   "nameKey": "tactic.442",
-  "ballFollow": { "x": 0.4, "y": 0.5 },
-  "attackShift": 0.12,
-  "slots": [
-    { "role": "goalkeeper", "home": [0.0, -0.94], "kickOff": [0.0, -0.94], "minY": -1.0, "maxY": -0.75 },
-    { "role": "forward", "home": [-0.2, 0.28], "kickOff": [0.0, -0.01], "minY": -0.4, "maxY": 0.88, "kickOffTaker": true }
+  "units": { "width": 912, "length": 1392 },
+  "players": [
+    {
+      "defend": [[27, 56], [27, 205], "... 12 positions ..."],
+      "attack": [[27, 115], "... 12 positions (facultatif) ..."],
+      "kickOffOwn": [182, 313],
+      "kickOffOpponent": [182, 313],
+      "goalKickOwn": [146, 63],
+      "goalKickOpponent": [146, 606],
+      "cornerOwnLeft": [27, 56],
+      "cornerOwnRight": [328, 56],
+      "cornerOpponentLeft": [27, 724],
+      "cornerOpponentRight": [328, 724]
+    }
   ]
 }
 ```
 
-- Onze postes exactement, dont un gardien et un tireur du coup d'envoi.
-- Position d'un poste : `home` + position normalisée du ballon × `ballFollow`, plus `attackShift` vers l'avant
-  quand l'équipe a le ballon, bornée par `minY` et `maxY`.
-- `kickOff` : position au coup d'envoi, obligatoirement dans sa moitié (y ≤ 0). Les joueurs de l'équipe qui
-  n'engage pas sont repoussés hors du rond central.
+- `defend` : les positions de Kick Off 2, qui ne dépendent pas de la possession. `attack`, facultatif, est
+  utilisé quand l'équipe a le ballon, comme dans Final Whistle.
+- Coup d'envoi : le joueur dont `kickOffOwn` est le plus proche du rond central engage. Le jeu replace dans leur
+  moitié les joueurs mal placés, et sort du rond central l'équipe qui n'engage pas.
+- Les tactiques fournies (`4-4-2`, `4-3-3`) sont générées par `tools/generate_default_tactics.py`. Ce sont des
+  positions originales, pas celles du jeu.
+
+### Utiliser les fichiers `.tac` originaux
+
+Si vous possédez Kick Off 2 ou Player Manager, vous pouvez déposer leurs fichiers de tactique dans un mod :
+`mods/mes-tactiques/tactics/zbreak.tac`. Ils sont lus tels quels : 10 joueurs × 20 positions en entiers 16 bits
+big-endian, les données suivantes étant ignorées. L'identifiant est le nom du fichier ; une équipe l'utilise avec
+`"tactic": "zbreak"`. Aucun fichier original n'est fourni avec le jeu.
 
 ## Règlement et IA
 

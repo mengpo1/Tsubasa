@@ -1,16 +1,16 @@
 {
   // One-button contextual controls. Timings in seconds, distances in metres, speeds in m/s.
   "contact": {
-    "footRadius": 0.55,
+    "footRadius": 0.61,
     "footHeight": 0.45,
     "bodyRadius": 0.4,
     "bodyHeight": 1.9,
     "touchCooldown": 0.15
   },
   "dribble": {
-    "baseSpeed": 1.2,
-    "runFactor": 1.12,
-    "maxRelativeSpeed": 9.5,
+    "baseSpeed": 2.29,
+    "runFactor": 1.125,
+    "maxRelativeSpeed": 13.0,
     "frontDot": -0.2
   },
   "deflection": {

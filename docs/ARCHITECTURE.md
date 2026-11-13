@@ -16,7 +16,7 @@ Tsubasa.slnx
 │       ├── Pitch/        Terrains, surfaces, géométrie
 │       ├── Control/      Actions de jeu partagées (BallActions) et contrôle contextuel humain
 │       ├── Teams/        Équipes, tenues, effectifs
-│       ├── Tactics/      Formations (données)
+│       ├── Tactics/      Tactiques à zones (modèle KO2), lecteur des fichiers .tac
 │       ├── Match/        Machine à états du match, arbitre, équipes en jeu, réglages
 │       ├── AI/           IA d'équipe, gardien, prévision de trajectoire du ballon
 │       └── Training/     Session d'entraînement (lot 1)
@@ -103,8 +103,9 @@ KickOffSetup → RestartReady(coup d'envoi) → Playing ─┬─ but ───�
 - Le ballon a trois états : `Live` (physique), `Dead` (posé pour une remise en jeu, ni physique ni contact) et
   `Carried` (dans les mains du gardien ou du lanceur de touche).
 - Les joueurs sont des corps solides : ils se repoussent entre eux et n'entrent pas dans les buts.
-- Les formations (`content/tactics/`) donnent une position de base par poste, décalée avec le ballon et un peu
-  plus haut quand l'équipe a la balle.
+- Tactiques (`content/tactics/`, modèle de Kick Off 2) : chaque joueur de champ a une position par zone du
+  ballon (12 zones) et par situation (coups d'envoi, six mètres, corners). Les jeux de positions `attack` de Final
+  Whistle sont pris en charge, et `KickOff2TacticFile` lit les fichiers `.tac` originaux.
 - Sélection humaine : le joueur de champ le plus proche du point où va le ballon, avec une marge et un délai
   minimum entre deux changements. Pas de changement pendant que le joueur garde le ballon ou tire une remise en
   jeu. Un amorti armé (bouton maintenu pendant qu'une passe arrive) passe au receveur.
@@ -118,7 +119,8 @@ KickOffSetup → RestartReady(coup d'envoi) → Playing ─┬─ but ───�
   est nettement mieux placé, il amortit puis passe ;
 - **poursuivants** (1 ou 2 selon le niveau) : les joueurs qui atteindront le ballon le plus tôt, d'après la
   prévision de trajectoire. Ils amortissent un ballon libre et courent dans un ballon tenu par un adversaire ;
-- **les autres** : placement selon la formation, réévalué à intervalle régulier, ce qui donne le temps de réaction ;
+- **les autres** : placement à la position tactique de la zone du ballon, réévalué à intervalle régulier, ce qui
+  donne le temps de réaction ;
 - **gardien** (`KeeperAi`) : placé entre le ballon et le centre du but. Après son temps de réaction, il se déplace
   vers le point où un tir croisera sa ligne. Il ramasse les ballons lents de sa surface et relance vers un
   coéquipier ;
