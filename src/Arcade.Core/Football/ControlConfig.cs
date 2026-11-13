@@ -203,12 +203,37 @@ public sealed record DribbleConfig : IContentData
     /// <summary>Balls behind the player (dot of ball offset and facing below this value) are deflected instead of pushed.</summary>
     public required float FrontDot { get; init; }
 
+    /// <summary>Shorter dribble near the attacked goal ("Penalty Box Dribble", see REFERENCE_ANALYSIS.md).</summary>
+    public required PenaltyBoxDribbleConfig PenaltyBoxDribble { get; init; }
+
     public void Validate(ICollection<string> problems)
     {
+        DataChecks.Nested(problems, "penaltyBoxDribble", PenaltyBoxDribble);
         DataChecks.NonNegative(problems, "baseSpeed", BaseSpeed);
         DataChecks.InRange(problems, "runFactor", RunFactor, 1f, 3f);
         DataChecks.Positive(problems, "maxRelativeSpeed", MaxRelativeSpeed);
         DataChecks.InRange(problems, "frontDot", FrontDot, -1f, 1f);
+    }
+}
+
+/// <summary>
+/// Penalty Box Dribble (PBD): in the band of <see cref="ZoneDepth"/> metres before the attacked goal line, the dribble
+/// push loses <see cref="HumanReduction"/> or <see cref="ComputerReduction"/> m/s. Kick Off 2 v1.4: computer players
+/// only (30 + 10 px/s); World Cup 90 / Player Manager: every player (30 px/s); 0 disables it.
+/// </summary>
+public sealed record PenaltyBoxDribbleConfig : IContentData
+{
+    public required float ZoneDepth { get; init; }
+
+    public required float HumanReduction { get; init; }
+
+    public required float ComputerReduction { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.NonNegative(problems, "zoneDepth", ZoneDepth);
+        DataChecks.NonNegative(problems, "humanReduction", HumanReduction);
+        DataChecks.NonNegative(problems, "computerReduction", ComputerReduction);
     }
 }
 

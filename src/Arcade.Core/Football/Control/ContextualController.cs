@@ -62,6 +62,7 @@ public sealed class ContextualController
     public ContextualController(Player player, bool aftertouchEnabled)
     {
         Player = player ?? throw new ArgumentNullException(nameof(player));
+        Player.ControlledByHuman = true;
         AftertouchEnabled = aftertouchEnabled;
     }
 
@@ -143,7 +144,9 @@ public sealed class ContextualController
         }
 
         Player.Intent = default;
+        Player.ControlledByHuman = false;
         Player = player;
+        Player.ControlledByHuman = true;
         if (Phase is ControlPhase.Holding or ControlPhase.AtFeet or ControlPhase.SetPiece)
         {
             Phase = ControlPhase.Free;

@@ -116,10 +116,9 @@ public static class BallActions
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(player);
-        DribbleConfig dribble = world.Controls.Dribble;
         Vector2 unit = VectorMath.SafeNormalize(direction);
         float run = MathF.Max(0f, Vector2.Dot(player.Velocity, unit));
-        world.Kick(player, unit, dribble.BaseSpeed + (dribble.RunFactor * run), 0f, KickKind.Dribble, 0f);
+        world.Kick(player, unit, world.DribbleSpeed(player, run), 0f, KickKind.Dribble, 0f);
     }
 
     /// <summary>Point where a controlled ball is kept, in front of the player.</summary>

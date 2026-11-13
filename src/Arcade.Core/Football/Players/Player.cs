@@ -98,6 +98,9 @@ public sealed class Player
     /// <summary>Goal this player's team defends (null outside matches). Set by the match at each kick-off.</summary>
     public Pitch.GoalEnd? DefendsEnd { get; set; }
 
+    /// <summary>True while a human controller drives this player (some original rules differ for computer players).</summary>
+    public bool ControlledByHuman { get; internal set; }
+
     /// <summary>True for the goalkeeper of a team in a match: he may use his hands in his own penalty area.</summary>
     public bool IsGoalkeeper => Profile.Role == PlayerRole.Goalkeeper && DefendsEnd is not null;
 

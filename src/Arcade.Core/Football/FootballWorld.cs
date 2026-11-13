@@ -188,6 +188,30 @@ public sealed class FootballWorld
         Ball.PreviousPosition = Ball.State.Position;
     }
 
+    /// <summary>
+    /// Speed of a dribble push: <c>runFactor × run speed + base</c> (Kick Off 2: 1.125 × speed + 30 px/s), minus the
+    /// Penalty Box Dribble reduction when the ball is in the band before the goal the player attacks.
+    /// </summary>
+    public float DribbleSpeed(Player player, float runSpeed)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        DribbleConfig dribble = Controls.Dribble;
+        float speed = dribble.BaseSpeed + (dribble.RunFactor * runSpeed);
+        PenaltyBoxDribbleConfig pbd = dribble.PenaltyBoxDribble;
+        float reduction = player.ControlledByHuman ? pbd.HumanReduction : pbd.ComputerReduction;
+        if (reduction > 0f && player.DefendsEnd is GoalEnd defended)
+        {
+            GoalEnd attacked = defended == GoalEnd.Top ? GoalEnd.Bottom : GoalEnd.Top;
+            float depth = (Pitch.GoalLineY(attacked) - Ball.State.Position.Y) * PitchGeometry.Outward(attacked);
+            if (depth >= 0f && depth <= pbd.ZoneDepth)
+            {
+                speed -= reduction;
+            }
+        }
+
+        return MathF.Max(0f, speed);
+    }
+
     /// <summary>Adds an aftertouch acceleration for the coming step.</summary>
     public void ApplyBallAcceleration(Vector3 acceleration) => Ball.AddControlAcceleration(acceleration);
 
@@ -383,8 +407,7 @@ public sealed class FootballWorld
             // Dribble: the ball is pushed ahead in the facing direction; faster runs push it further.
             Vector2 facing = player.Facing.ToVector();
             float runSpeed = MathF.Max(0f, Vector2.Dot(player.Velocity, facing));
-            float speed = controls.Dribble.BaseSpeed + (controls.Dribble.RunFactor * runSpeed);
-            ball.Velocity = new Vector3(facing * speed, 0f);
+            ball.Velocity = new Vector3(facing * DribbleSpeed(player, runSpeed), 0f);
             ball.Position.Z = 0f;
             kind = BallTouchKind.Dribble;
         }

@@ -11,7 +11,13 @@
     "baseSpeed": 2.29,
     "runFactor": 1.125,
     "maxRelativeSpeed": 13.0,
-    "frontDot": -0.2
+    "frontDot": -0.2,
+    // Penalty Box Dribble (Kick Off 2 v1.4: computer players only; set humanReduction to 2.29 for World Cup 90 / Player Manager).
+    "penaltyBoxDribble": {
+      "zoneDepth": 16.46,
+      "humanReduction": 0.0,
+      "computerReduction": 3.05
+    }
   },
   "deflection": {
     "restitution": 0.35,

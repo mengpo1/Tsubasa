@@ -39,6 +39,7 @@ public sealed class TrainingSession
         World = new FootballWorld(content, pitch, seed);
         PlayerProfile profile = team.Players.FirstOrDefault(p => p.Role == PlayerRole.Forward) ?? team.Players[0];
         Player = World.AddPlayer(0, profile);
+        Player.DefendsEnd = GoalEnd.Bottom; // The training player attacks the top goal.
         Controller = new ContextualController(Player, content.Controls.Aftertouch.Enabled);
         ResetPositions();
     }

@@ -88,7 +88,8 @@ est documenté.
 
 | Geste | Comment | Provenance |
 |---|---|---|
-| Dribble | Courir dans le ballon sans bouton : il part dans la direction du joueur à `2,29 + 1,125 × vitesse` m/s. Il s'éloigne puis le joueur le rattrape. Contact à moins de 0,61 m. | Principe [KO2] ; formule et rayon [Reconstitué : Open Kick-Off, `MatchScreen.checkCollisions`, 30 px/s et 8 px] |
+| Dribble | Courir dans le ballon sans bouton : il part dans la direction du joueur à `1,125 × vitesse + 2,29` m/s. Il s'éloigne puis le joueur le rattrape. Contact à moins de 0,61 m. | Principe [KO2]. Formule [Reconstitué, deux sources concordantes : Open Kick-Off et désassemblage publié par la communauté, `1,125 × vitesse + 30 px/s`]. Rayon de 8 px [Reconstitué] |
+| Dribble dans la surface (PBD) | Dans les 18 yards (16,46 m) avant le but attaqué, la poussée perd 30 + 10 px/s (3,05 m/s) pour les joueurs de l'ordinateur : ils gardent le ballon très près. Les humains ne sont pas concernés, comme dans KO2 v1.4. Le comportement de World Cup 90 et de Player Manager (tous les joueurs, −30 px/s) se règle par `controls.json › dribble.penaltyBoxDribble`. | [Reconstitué : désassemblage publié sur le wiki KOA, page *PBD*]. Le choix du but attaqué est une interprétation |
 | Perte de balle | Un virage serré ou un ballon trop rapide (écart > 13 m/s) font perdre le ballon : il rebondit sur le joueur. Un ballon derrière le joueur est dévié, pas poussé. | Conséquence du modèle [Choix] |
 | Tir | Bouton pressé dans les 0,3 s **après** une touche, ballon à moins de 1,7 m et à moins de 0,8 m de haut. Vitesse 22 m/s × (0,85 à 1,1 selon Shooting) + 0,5 × la vitesse de course, élévation 4 m/s, dans la direction du joystick. | Règle [KO2] ; fenêtre, portée et puissance [Estimé] |
 | Contrôle (amorti) | Bouton pressé **avant** le contact et maintenu : au contact (ballon à moins de 1,3 m de haut), le ballon est arrêté. Le joueur s'immobilise dessus et le ballon reste physique, ramené vers ses pieds. | Règle [KO2] |
@@ -108,9 +109,10 @@ Choix d'interprétation à noter :
 - Le manuel KO2 ne précise pas la hauteur des tirs. Ici, chaque tir décolle (4 m/s vers le haut). Le « dip » vers
   l'avant n'est documenté que pour les coups francs : il existe dans le moteur (`dipAcceleration`) mais vaut 0 en
   jeu courant. La mise en œuvre de la table complète des coups francs viendra au lot 4.
-- Un appui sur le bouton sans ballon à portée **arme le contrôle**. Le tacle glissé de KO2 (« fire with the ball on
-  the ground ») arrivera au lot 3. Il faudra alors trancher la distinction tacle / contrôle, que le manuel ne
-  documente pas.
+- **Écart connu avec l'original** : ici, un appui sur le bouton sans ballon à portée **arme le contrôle**. Dans Kick
+  Off 2, sur un ballon libre, le bouton déclenche un **tacle glissé**, ou une **tête** si le ballon est en l'air ;
+  l'amorti n'est possible qu'en possession [Confirmé : Dino Dini, cité sur le wiki KOA]. Cette règle sera
+  appliquée au lot 3, avec les tacles et l'option *Trapfix* de la Competition Version.
 
 ## Match (lot 2)
 

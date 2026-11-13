@@ -143,6 +143,9 @@ Le format complet est décrit dans [docs/MODDING.md](docs/MODDING.md).
 - [docs/GAMEPLAY.md](docs/GAMEPLAY.md) : mécaniques implémentées, ce qui est documenté, estimé ou choisi.
 - [docs/MODDING.md](docs/MODDING.md) : créer un mod.
 - [docs/RESEARCH.md](docs/RESEARCH.md) : synthèse des manuels originaux et points à calibrer.
+- [docs/REFERENCE_ANALYSIS.md](docs/REFERENCE_ANALYSIS.md) : ce qui est repris d'Open Kick-Off, du format des
+  tactiques, de la Competition Version et des écrits de Dino Dini.
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) : licences et attributions.
 
 ## Ressources et licences
 
