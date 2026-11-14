@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Local importer: converts files of the user's own copy of Kick Off 2 / The Final Whistle (Amiga disk images
+    or extracted files) into PNG images for the classic-amiga theme. Nothing it produces may be committed:
+    the output folder is excluded by .gitignore. No dependency on MonoGame or on the game engine.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Arcade.Importer</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Arcade.Tests" />
+  </ItemGroup>
+</Project>

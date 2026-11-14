@@ -1,0 +1,21 @@
+{
+  // Presentation only: changing these values never changes the simulation.
+  "virtualWidth": 640,
+  "virtualHeight": 360,
+  "windowScale": 2,
+  "pixelsPerMetre": 16,
+  "heightScale": 0.5,
+  "camera": {
+    "lookAheadSeconds": 0.0,
+    "maxLookAhead": 7.0,
+    "smoothing": 20.0,
+    "minZoom": 0.5,
+    "maxZoom": 2.0,
+    "zoomStep": 0.25
+  },
+  "radar": {
+    "width": 64,
+    "visible": true,
+    "opacity": 0.85
+  }
+}

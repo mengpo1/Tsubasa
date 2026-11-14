@@ -1,0 +1,7 @@
+{
+  // Logical ids are re-pointed to files that only exist in this mod.
+  "textures": {
+    "pitch.grass.normal": "assets/textures/grass_neon.png",
+    "ball.default": "assets/textures/ball_gold.png"
+  }
+}

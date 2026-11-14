@@ -1,0 +1,253 @@
+{
+  "id": "reds",
+  "name": "Redcliff Rovers",
+  "shortName": "RED",
+  "tactic": "4-4-2",
+  "kit": {
+    "shirt": "#C8202C",
+    "shorts": "#F2F2F2",
+    "socks": "#C8202C"
+  },
+  "players": [
+    {
+      "number": 1,
+      "name": "A. Ashdown",
+      "role": "goalkeeper",
+      "attributes": {
+        "pace": 60,
+        "stamina": 53,
+        "aggression": 50,
+        "resilience": 73,
+        "passing": 58,
+        "shooting": 57,
+        "tackling": 57,
+        "flair": 54
+      }
+    },
+    {
+      "number": 2,
+      "name": "B. Brennick",
+      "role": "defender",
+      "attributes": {
+        "pace": 73,
+        "stamina": 53,
+        "aggression": 79,
+        "resilience": 73,
+        "passing": 67,
+        "shooting": 37,
+        "tackling": 80,
+        "flair": 63
+      }
+    },
+    {
+      "number": 3,
+      "name": "C. Calloway",
+      "role": "defender",
+      "attributes": {
+        "pace": 51,
+        "stamina": 50,
+        "aggression": 60,
+        "resilience": 56,
+        "passing": 57,
+        "shooting": 51,
+        "tackling": 81,
+        "flair": 50
+      }
+    },
+    {
+      "number": 4,
+      "name": "D. Dunmore",
+      "role": "defender",
+      "attributes": {
+        "pace": 67,
+        "stamina": 56,
+        "aggression": 80,
+        "resilience": 70,
+        "passing": 72,
+        "shooting": 52,
+        "tackling": 75,
+        "flair": 57
+      }
+    },
+    {
+      "number": 5,
+      "name": "E. Ellery",
+      "role": "defender",
+      "attributes": {
+        "pace": 64,
+        "stamina": 68,
+        "aggression": 66,
+        "resilience": 50,
+        "passing": 74,
+        "shooting": 40,
+        "tackling": 84,
+        "flair": 63
+      }
+    },
+    {
+      "number": 6,
+      "name": "F. Fenwick",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 60,
+        "stamina": 63,
+        "aggression": 54,
+        "resilience": 56,
+        "passing": 82,
+        "shooting": 60,
+        "tackling": 53,
+        "flair": 52
+      }
+    },
+    {
+      "number": 7,
+      "name": "G. Garrow",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 62,
+        "stamina": 58,
+        "aggression": 61,
+        "resilience": 61,
+        "passing": 77,
+        "shooting": 58,
+        "tackling": 51,
+        "flair": 73
+      }
+    },
+    {
+      "number": 8,
+      "name": "H. Hollis",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 64,
+        "stamina": 72,
+        "aggression": 53,
+        "resilience": 62,
+        "passing": 60,
+        "shooting": 67,
+        "tackling": 59,
+        "flair": 70
+      }
+    },
+    {
+      "number": 9,
+      "name": "I. Ingram",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 69,
+        "stamina": 66,
+        "aggression": 68,
+        "resilience": 56,
+        "passing": 80,
+        "shooting": 52,
+        "tackling": 51,
+        "flair": 71
+      }
+    },
+    {
+      "number": 10,
+      "name": "J. Jessop",
+      "role": "forward",
+      "attributes": {
+        "pace": 65,
+        "stamina": 74,
+        "aggression": 59,
+        "resilience": 52,
+        "passing": 57,
+        "shooting": 65,
+        "tackling": 52,
+        "flair": 68
+      }
+    },
+    {
+      "number": 11,
+      "name": "K. Kettering",
+      "role": "forward",
+      "attributes": {
+        "pace": 72,
+        "stamina": 70,
+        "aggression": 61,
+        "resilience": 55,
+        "passing": 61,
+        "shooting": 73,
+        "tackling": 46,
+        "flair": 81
+      }
+    },
+    {
+      "number": 12,
+      "name": "L. Lowell",
+      "role": "goalkeeper",
+      "attributes": {
+        "pace": 48,
+        "stamina": 72,
+        "aggression": 71,
+        "resilience": 70,
+        "passing": 52,
+        "shooting": 69,
+        "tackling": 70,
+        "flair": 55
+      }
+    },
+    {
+      "number": 13,
+      "name": "M. Marchant",
+      "role": "defender",
+      "attributes": {
+        "pace": 67,
+        "stamina": 73,
+        "aggression": 65,
+        "resilience": 55,
+        "passing": 64,
+        "shooting": 47,
+        "tackling": 70,
+        "flair": 70
+      }
+    },
+    {
+      "number": 14,
+      "name": "N. Norcott",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 72,
+        "stamina": 72,
+        "aggression": 57,
+        "resilience": 71,
+        "passing": 68,
+        "shooting": 74,
+        "tackling": 74,
+        "flair": 51
+      }
+    },
+    {
+      "number": 15,
+      "name": "O. Orwin",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 57,
+        "stamina": 56,
+        "aggression": 60,
+        "resilience": 62,
+        "passing": 66,
+        "shooting": 52,
+        "tackling": 56,
+        "flair": 68
+      }
+    },
+    {
+      "number": 16,
+      "name": "P. Pembrey",
+      "role": "forward",
+      "attributes": {
+        "pace": 80,
+        "stamina": 60,
+        "aggression": 56,
+        "resilience": 70,
+        "passing": 65,
+        "shooting": 74,
+        "tackling": 60,
+        "flair": 74
+      }
+    }
+  ]
+}

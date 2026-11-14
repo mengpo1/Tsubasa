@@ -1,0 +1,7 @@
+{
+  "id": "base",
+  "name": "Base game data",
+  "version": "0.1.0",
+  "formatVersion": 1,
+  "description": "Default data and placeholder art. Every file here can be overridden by a mod."
+}

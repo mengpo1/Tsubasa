@@ -1,0 +1,253 @@
+{
+  "id": "blues",
+  "name": "Bluewater Athletic",
+  "shortName": "BLU",
+  "tactic": "4-3-3",
+  "kit": {
+    "shirt": "#1E4FB4",
+    "shorts": "#1A1A2E",
+    "socks": "#F2F2F2"
+  },
+  "players": [
+    {
+      "number": 1,
+      "name": "Q. Quarrie",
+      "role": "goalkeeper",
+      "attributes": {
+        "pace": 40,
+        "stamina": 54,
+        "aggression": 50,
+        "resilience": 53,
+        "passing": 69,
+        "shooting": 63,
+        "tackling": 63,
+        "flair": 54
+      }
+    },
+    {
+      "number": 2,
+      "name": "R. Radley",
+      "role": "defender",
+      "attributes": {
+        "pace": 69,
+        "stamina": 64,
+        "aggression": 67,
+        "resilience": 64,
+        "passing": 58,
+        "shooting": 42,
+        "tackling": 65,
+        "flair": 50
+      }
+    },
+    {
+      "number": 3,
+      "name": "S. Sallow",
+      "role": "defender",
+      "attributes": {
+        "pace": 62,
+        "stamina": 61,
+        "aggression": 56,
+        "resilience": 70,
+        "passing": 47,
+        "shooting": 34,
+        "tackling": 62,
+        "flair": 66
+      }
+    },
+    {
+      "number": 4,
+      "name": "T. Tamsin",
+      "role": "defender",
+      "attributes": {
+        "pace": 51,
+        "stamina": 67,
+        "aggression": 67,
+        "resilience": 65,
+        "passing": 48,
+        "shooting": 43,
+        "tackling": 70,
+        "flair": 65
+      }
+    },
+    {
+      "number": 5,
+      "name": "U. Upham",
+      "role": "defender",
+      "attributes": {
+        "pace": 60,
+        "stamina": 62,
+        "aggression": 62,
+        "resilience": 63,
+        "passing": 46,
+        "shooting": 52,
+        "tackling": 81,
+        "flair": 49
+      }
+    },
+    {
+      "number": 6,
+      "name": "V. Varne",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 67,
+        "stamina": 68,
+        "aggression": 70,
+        "resilience": 54,
+        "passing": 78,
+        "shooting": 66,
+        "tackling": 56,
+        "flair": 49
+      }
+    },
+    {
+      "number": 7,
+      "name": "W. Whitlock",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 55,
+        "stamina": 64,
+        "aggression": 51,
+        "resilience": 60,
+        "passing": 54,
+        "shooting": 69,
+        "tackling": 69,
+        "flair": 54
+      }
+    },
+    {
+      "number": 8,
+      "name": "X. Yarrow",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 62,
+        "stamina": 75,
+        "aggression": 51,
+        "resilience": 62,
+        "passing": 57,
+        "shooting": 66,
+        "tackling": 55,
+        "flair": 66
+      }
+    },
+    {
+      "number": 9,
+      "name": "Y. Yelland",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 62,
+        "stamina": 70,
+        "aggression": 52,
+        "resilience": 50,
+        "passing": 65,
+        "shooting": 70,
+        "tackling": 51,
+        "flair": 63
+      }
+    },
+    {
+      "number": 10,
+      "name": "Z. Zennor",
+      "role": "forward",
+      "attributes": {
+        "pace": 78,
+        "stamina": 62,
+        "aggression": 46,
+        "resilience": 65,
+        "passing": 56,
+        "shooting": 73,
+        "tackling": 36,
+        "flair": 59
+      }
+    },
+    {
+      "number": 11,
+      "name": "A. Abbotsley",
+      "role": "forward",
+      "attributes": {
+        "pace": 65,
+        "stamina": 55,
+        "aggression": 53,
+        "resilience": 47,
+        "passing": 53,
+        "shooting": 76,
+        "tackling": 38,
+        "flair": 58
+      }
+    },
+    {
+      "number": 12,
+      "name": "B. Brisco",
+      "role": "goalkeeper",
+      "attributes": {
+        "pace": 59,
+        "stamina": 61,
+        "aggression": 48,
+        "resilience": 70,
+        "passing": 63,
+        "shooting": 70,
+        "tackling": 50,
+        "flair": 50
+      }
+    },
+    {
+      "number": 13,
+      "name": "C. Corran",
+      "role": "defender",
+      "attributes": {
+        "pace": 67,
+        "stamina": 61,
+        "aggression": 71,
+        "resilience": 51,
+        "passing": 54,
+        "shooting": 47,
+        "tackling": 77,
+        "flair": 59
+      }
+    },
+    {
+      "number": 14,
+      "name": "D. Dellow",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 52,
+        "stamina": 68,
+        "aggression": 70,
+        "resilience": 69,
+        "passing": 76,
+        "shooting": 52,
+        "tackling": 68,
+        "flair": 55
+      }
+    },
+    {
+      "number": 15,
+      "name": "E. Eskdale",
+      "role": "midfielder",
+      "attributes": {
+        "pace": 58,
+        "stamina": 72,
+        "aggression": 66,
+        "resilience": 57,
+        "passing": 68,
+        "shooting": 62,
+        "tackling": 60,
+        "flair": 49
+      }
+    },
+    {
+      "number": 16,
+      "name": "F. Farrant",
+      "role": "forward",
+      "attributes": {
+        "pace": 61,
+        "stamina": 53,
+        "aggression": 48,
+        "resilience": 56,
+        "passing": 46,
+        "shooting": 76,
+        "tackling": 53,
+        "flair": 63
+      }
+    }
+  ]
+}

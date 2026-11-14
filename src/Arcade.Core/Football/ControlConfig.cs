@@ -1,0 +1,411 @@
+using Arcade.Core.Content;
+
+namespace Arcade.Core.Football;
+
+/// <summary>
+/// Timings, reaches and kick powers of the contextual one-button controls (<c>config/controls.json</c>).
+/// None of these values is documented in the original manuals: they are estimates to calibrate by play.
+/// </summary>
+public sealed record ControlConfig : IContentData
+{
+    public const string FileName = "config/controls.json";
+
+    public required ContactConfig Contact { get; init; }
+
+    public required DribbleConfig Dribble { get; init; }
+
+    public required DeflectionConfig Deflection { get; init; }
+
+    public required ShotConfig Shot { get; init; }
+
+    public required TrapConfig Trap { get; init; }
+
+    public required PassConfig Pass { get; init; }
+
+    public required ChipConfig Chip { get; init; }
+
+    public required AftertouchConfig Aftertouch { get; init; }
+
+    public required KeeperConfig Keeper { get; init; }
+
+    public required SelectionConfig Selection { get; init; }
+
+    public required SetPiecesConfig SetPieces { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Nested(problems, "contact", Contact);
+        DataChecks.Nested(problems, "dribble", Dribble);
+        DataChecks.Nested(problems, "deflection", Deflection);
+        DataChecks.Nested(problems, "shot", Shot);
+        DataChecks.Nested(problems, "trap", Trap);
+        DataChecks.Nested(problems, "pass", Pass);
+        DataChecks.Nested(problems, "chip", Chip);
+        DataChecks.Nested(problems, "aftertouch", Aftertouch);
+        DataChecks.Nested(problems, "keeper", Keeper);
+        DataChecks.Nested(problems, "selection", Selection);
+        DataChecks.Nested(problems, "setPieces", SetPieces);
+    }
+}
+
+/// <summary>Goalkeeper hands in his own penalty area (elementary keeper, Lot 2).</summary>
+public sealed record KeeperConfig : IContentData
+{
+    /// <summary>Horizontal reach of the arms (m).</summary>
+    public required float Reach { get; init; }
+
+    /// <summary>Highest ball bottom the keeper can reach (m).</summary>
+    public required float MaxHeight { get; init; }
+
+    /// <summary>Faster balls (relative to the keeper) are parried instead of caught (m/s).</summary>
+    public required float CatchMaxSpeed { get; init; }
+
+    /// <summary>Restitution of a parry.</summary>
+    public required float ParryRestitution { get; init; }
+
+    /// <summary>Height of the ball held in the hands (m).</summary>
+    public required float CarryHeight { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "reach", Reach);
+        DataChecks.Positive(problems, "maxHeight", MaxHeight);
+        DataChecks.Positive(problems, "catchMaxSpeed", CatchMaxSpeed);
+        DataChecks.InRange(problems, "parryRestitution", ParryRestitution, 0f, 1f);
+        DataChecks.InRange(problems, "carryHeight", CarryHeight, 0f, 3f);
+    }
+}
+
+/// <summary>Automatic choice of the human-controlled player ("playing as a team": the player nearest the ball).</summary>
+public sealed record SelectionConfig : IContentData
+{
+    /// <summary>A teammate must be this much closer (m) than the current player to take control.</summary>
+    public required float SwitchMargin { get; init; }
+
+    /// <summary>Minimum time between two switches (s).</summary>
+    public required float MinSwitchInterval { get; init; }
+
+    /// <summary>Distances are measured to where the ball will be after this time (s).</summary>
+    public required float Anticipation { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.NonNegative(problems, "switchMargin", SwitchMargin);
+        DataChecks.NonNegative(problems, "minSwitchInterval", MinSwitchInterval);
+        DataChecks.NonNegative(problems, "anticipation", Anticipation);
+    }
+}
+
+/// <summary>Basic restarts (Lot 2): aim with the joystick, hold fire to charge, release to kick.</summary>
+public sealed record SetPiecesConfig : IContentData
+{
+    public required SetPieceKickConfig KickOff { get; init; }
+
+    public required SetPieceKickConfig ThrowIn { get; init; }
+
+    public required SetPieceKickConfig Corner { get; init; }
+
+    public required SetPieceKickConfig GoalKick { get; init; }
+
+    /// <summary>Height of the ball in the thrower's hands (m).</summary>
+    public required float ThrowInHeight { get; init; }
+
+    public SetPieceKickConfig For(SetPieceKind kind) => kind switch
+    {
+        SetPieceKind.KickOff => KickOff,
+        SetPieceKind.ThrowIn => ThrowIn,
+        SetPieceKind.Corner => Corner,
+        _ => GoalKick,
+    };
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Nested(problems, "kickOff", KickOff);
+        DataChecks.Nested(problems, "throwIn", ThrowIn);
+        DataChecks.Nested(problems, "corner", Corner);
+        DataChecks.Nested(problems, "goalKick", GoalKick);
+        DataChecks.InRange(problems, "throwInHeight", ThrowInHeight, 0f, 3f);
+    }
+}
+
+public enum SetPieceKind
+{
+    KickOff,
+    ThrowIn,
+    Corner,
+    GoalKick,
+}
+
+/// <summary>Speed and lift interpolated between their minimum and maximum by the charge (hold time / chargeTime).</summary>
+public sealed record SetPieceKickConfig : IContentData
+{
+    public required float MinSpeed { get; init; }
+
+    public required float MaxSpeed { get; init; }
+
+    public required float MinLift { get; init; }
+
+    public required float MaxLift { get; init; }
+
+    public required float ChargeTime { get; init; }
+
+    public required float AftertouchScale { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "minSpeed", MinSpeed);
+        DataChecks.InRange(problems, "maxSpeed", MaxSpeed, MinSpeed, 60f);
+        DataChecks.NonNegative(problems, "minLift", MinLift);
+        DataChecks.InRange(problems, "maxLift", MaxLift, MinLift, 40f);
+        DataChecks.Positive(problems, "chargeTime", ChargeTime);
+        DataChecks.NonNegative(problems, "aftertouchScale", AftertouchScale);
+    }
+}
+
+/// <summary>Where a player can touch the ball. Independent of the sprite size.</summary>
+public sealed record ContactConfig : IContentData
+{
+    /// <summary>Horizontal reach of the feet around the player's ground position (m).</summary>
+    public required float FootRadius { get; init; }
+
+    /// <summary>Highest ball bottom (m) still played with the feet.</summary>
+    public required float FootHeight { get; init; }
+
+    /// <summary>Horizontal radius of the body for higher balls (m).</summary>
+    public required float BodyRadius { get; init; }
+
+    /// <summary>Top of the body (m); higher balls fly over the player.</summary>
+    public required float BodyHeight { get; init; }
+
+    /// <summary>Minimum time between two touches by the same player (s).</summary>
+    public required float TouchCooldown { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "footRadius", FootRadius);
+        DataChecks.Positive(problems, "footHeight", FootHeight);
+        DataChecks.Positive(problems, "bodyRadius", BodyRadius);
+        DataChecks.Positive(problems, "bodyHeight", BodyHeight);
+        DataChecks.NonNegative(problems, "touchCooldown", TouchCooldown);
+    }
+}
+
+/// <summary>Running into the ball without pressing fire pushes it ahead: speed = baseSpeed + runFactor x player speed.</summary>
+public sealed record DribbleConfig : IContentData
+{
+    public required float BaseSpeed { get; init; }
+
+    public required float RunFactor { get; init; }
+
+    /// <summary>Above this ball/player relative speed the ball cannot be dribbled: it bounces off the player.</summary>
+    public required float MaxRelativeSpeed { get; init; }
+
+    /// <summary>Balls behind the player (dot of ball offset and facing below this value) are deflected instead of pushed.</summary>
+    public required float FrontDot { get; init; }
+
+    /// <summary>Shorter dribble near the attacked goal ("Penalty Box Dribble", see REFERENCE_ANALYSIS.md).</summary>
+    public required PenaltyBoxDribbleConfig PenaltyBoxDribble { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Nested(problems, "penaltyBoxDribble", PenaltyBoxDribble);
+        DataChecks.NonNegative(problems, "baseSpeed", BaseSpeed);
+        DataChecks.InRange(problems, "runFactor", RunFactor, 1f, 3f);
+        DataChecks.Positive(problems, "maxRelativeSpeed", MaxRelativeSpeed);
+        DataChecks.InRange(problems, "frontDot", FrontDot, -1f, 1f);
+    }
+}
+
+/// <summary>
+/// Penalty Box Dribble (PBD): in the band of <see cref="ZoneDepth"/> metres before the attacked goal line, the dribble
+/// push loses <see cref="HumanReduction"/> or <see cref="ComputerReduction"/> m/s. Kick Off 2 v1.4: computer players
+/// only (30 + 10 px/s); World Cup 90 / Player Manager: every player (30 px/s); 0 disables it.
+/// </summary>
+public sealed record PenaltyBoxDribbleConfig : IContentData
+{
+    public required float ZoneDepth { get; init; }
+
+    public required float HumanReduction { get; init; }
+
+    public required float ComputerReduction { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.NonNegative(problems, "zoneDepth", ZoneDepth);
+        DataChecks.NonNegative(problems, "humanReduction", HumanReduction);
+        DataChecks.NonNegative(problems, "computerReduction", ComputerReduction);
+    }
+}
+
+/// <summary>Uncontrolled contact: the ball rebounds off the player's body.</summary>
+public sealed record DeflectionConfig : IContentData
+{
+    public required float Restitution { get; init; }
+
+    /// <summary>Fraction of the tangential relative speed kept.</summary>
+    public required float TangentialKeep { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.InRange(problems, "restitution", Restitution, 0f, 1f);
+        DataChecks.InRange(problems, "tangentialKeep", TangentialKeep, 0f, 1f);
+    }
+}
+
+/// <summary>Fire pressed shortly AFTER touching the ball: shot in the facing direction.</summary>
+public sealed record ShotConfig : IContentData
+{
+    /// <summary>Time after a touch during which pressing fire shoots (s).</summary>
+    public required float Window { get; init; }
+
+    /// <summary>Maximum distance between player and ball for the shot to connect (m).</summary>
+    public required float Reach { get; init; }
+
+    /// <summary>Highest ball bottom (m) that can be shot.</summary>
+    public required float MaxBallHeight { get; init; }
+
+    public required float BaseSpeed { get; init; }
+
+    /// <summary>Part of the player's running speed (along the shot) added to the shot.</summary>
+    public required float RunFactor { get; init; }
+
+    /// <summary>Initial vertical speed of a shot (m/s).</summary>
+    public required float Lift { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "window", Window);
+        DataChecks.Positive(problems, "reach", Reach);
+        DataChecks.Positive(problems, "maxBallHeight", MaxBallHeight);
+        DataChecks.Positive(problems, "baseSpeed", BaseSpeed);
+        DataChecks.NonNegative(problems, "runFactor", RunFactor);
+        DataChecks.NonNegative(problems, "lift", Lift);
+    }
+}
+
+/// <summary>Fire held BEFORE the contact: the ball is stopped and controlled.</summary>
+public sealed record TrapConfig : IContentData
+{
+    public required float MaxBallHeight { get; init; }
+
+    /// <summary>Faster balls (relative to the player) cannot be trapped and rebound.</summary>
+    public required float MaxRelativeSpeed { get; init; }
+
+    /// <summary>Distance in front of the player where a controlled ball is kept (m).</summary>
+    public required float HoldDistance { get; init; }
+
+    /// <summary>Speed at which the controlled ball is steered towards the hold point (1/s).</summary>
+    public required float HoldGain { get; init; }
+
+    /// <summary>Maximum steering speed of a controlled ball (m/s).</summary>
+    public required float MaxHoldSpeed { get; init; }
+
+    /// <summary>A controlled ball further than this from its hold point is lost (m).</summary>
+    public required float LoseDistance { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "maxBallHeight", MaxBallHeight);
+        DataChecks.Positive(problems, "maxRelativeSpeed", MaxRelativeSpeed);
+        DataChecks.Positive(problems, "holdDistance", HoldDistance);
+        DataChecks.Positive(problems, "holdGain", HoldGain);
+        DataChecks.Positive(problems, "maxHoldSpeed", MaxHoldSpeed);
+        DataChecks.Positive(problems, "loseDistance", LoseDistance);
+    }
+}
+
+/// <summary>
+/// Pass from a controlled ball: hold fire, aim with the joystick, release.
+/// The longer the direction is held before release, the stronger the pass (design choice, see GAMEPLAY.md).
+/// </summary>
+public sealed record PassConfig : IContentData
+{
+    public required float MinSpeed { get; init; }
+
+    public required float MaxSpeed { get; init; }
+
+    /// <summary>Aiming time (s) to reach <see cref="MaxSpeed"/>. 0 = always <see cref="MinSpeed"/>.</summary>
+    public required float ChargeTime { get; init; }
+
+    public required float Lift { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "minSpeed", MinSpeed);
+        DataChecks.Positive(problems, "maxSpeed", MaxSpeed);
+        if (MaxSpeed < MinSpeed)
+        {
+            problems.Add("maxSpeed must be greater than or equal to minSpeed");
+        }
+
+        DataChecks.NonNegative(problems, "chargeTime", ChargeTime);
+        DataChecks.NonNegative(problems, "lift", Lift);
+    }
+}
+
+/// <summary>Reversing the joystick while the ball is on the ground at the player's feet chips it.</summary>
+public sealed record ChipConfig : IContentData
+{
+    public required float Reach { get; init; }
+
+    /// <summary>Time after the player's last touch during which a reversal still chips (s).</summary>
+    public required float PossessionWindow { get; init; }
+
+    /// <summary>The new direction must satisfy dot(new, previous) &lt;= this value (-1 = exact reversal).</summary>
+    public required float ReversalDot { get; init; }
+
+    /// <summary>A reversal through the centre position counts if the previous direction was held this recently (s).</summary>
+    public required float ReversalWindow { get; init; }
+
+    public required float Speed { get; init; }
+
+    public required float Lift { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "reach", Reach);
+        DataChecks.Positive(problems, "possessionWindow", PossessionWindow);
+        DataChecks.InRange(problems, "reversalDot", ReversalDot, -1f, 0f);
+        DataChecks.NonNegative(problems, "reversalWindow", ReversalWindow);
+        DataChecks.Positive(problems, "speed", Speed);
+        DataChecks.Positive(problems, "lift", Lift);
+    }
+}
+
+/// <summary>
+/// Joystick influence on the ball just after a kick. Documented: sideways bend using the forward joystick
+/// positions only, for a very short time. Dip/lift strengths are set to 0 for open play by default.
+/// </summary>
+public sealed record AftertouchConfig : IContentData
+{
+    public required bool Enabled { get; init; }
+
+    /// <summary>Length of the aftertouch window after the kick (s).</summary>
+    public required float Duration { get; init; }
+
+    /// <summary>Sideways acceleration at full strength (m/s²), fading linearly to 0 over the window.</summary>
+    public required float CurlAcceleration { get; init; }
+
+    /// <summary>Downward acceleration for "forward" input (m/s²). 0 disables dipping.</summary>
+    public required float DipAcceleration { get; init; }
+
+    /// <summary>Upward acceleration for "backward" input (m/s²). 0 = backward positions do nothing (as documented).</summary>
+    public required float LiftAcceleration { get; init; }
+
+    public required float ShotScale { get; init; }
+
+    public required float PassScale { get; init; }
+
+    public required float ChipScale { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        DataChecks.Positive(problems, "duration", Duration);
+        DataChecks.NonNegative(problems, "curlAcceleration", CurlAcceleration);
+        DataChecks.NonNegative(problems, "dipAcceleration", DipAcceleration);
+        DataChecks.NonNegative(problems, "liftAcceleration", LiftAcceleration);
+        DataChecks.NonNegative(problems, "shotScale", ShotScale);
+        DataChecks.NonNegative(problems, "passScale", PassScale);
+        DataChecks.NonNegative(problems, "chipScale", ChipScale);
+    }
+}

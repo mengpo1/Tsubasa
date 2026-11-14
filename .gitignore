@@ -39,3 +39,31 @@ luac.out
 *.x86_64
 *.hex
 
+
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+*.binlog
+
+# Local user settings and generated output
+/settings.json
+/artifacts/
+
+# Original commercial game resources: NEVER commit them. They are produced locally by
+# tools/Arcade.Importer from the user's own copy of the game (see docs/THEMES.md).
+content/themes/*/imported/
+/original/
+*.adf
+*.ADF
+*.adz
+*.dms
+*.ipf
+*.iff
+*.IFF
+*.dat
+*.DAT

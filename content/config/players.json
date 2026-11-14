@@ -1,0 +1,18 @@
+{
+  "ratingScale": { "min": 0, "max": 100 },
+  "effects": {
+    "paceSpeed": { "atMin": 0.88, "atMax": 1.08 },
+    "paceAcceleration": { "atMin": 0.92, "atMax": 1.06 },
+    "shootingPower": { "atMin": 0.85, "atMax": 1.1 },
+    "passingPower": { "atMin": 0.92, "atMax": 1.06 },
+    "staminaDrain": { "atMin": 1.5, "atMax": 0.6 }
+  },
+  "fatigue": {
+    "enabled": true,
+    "drainPerSecond": 0.002,
+    "recoveryPerSecond": 0.0008,
+    "runningThreshold": 0.7,
+    "speedWhenExhausted": 0.82,
+    "accelerationWhenExhausted": 0.85
+  }
+}

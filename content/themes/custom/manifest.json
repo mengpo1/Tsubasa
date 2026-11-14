@@ -1,0 +1,7 @@
+{
+  "id": "custom",
+  "name": "Custom",
+  "version": "1.0",
+  "formatVersion": 1,
+  "description": "The project's own original art (default look). Copy this folder to make your own look."
+}

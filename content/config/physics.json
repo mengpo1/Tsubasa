@@ -1,0 +1,38 @@
+{
+  // Units: metres, seconds. Provenance of each value: docs/REFERENCE_ANALYSIS.md (confirmed / reconstituted / approximate).
+  "stepsPerSecond": 60,
+  "gravity": 9.81,
+  "ball": {
+    "radius": 0.11,
+    "maxSpeed": 40.0,
+    "airDrag": 0.08,
+    "rollingResistance": 1.4,
+    "rollingDrag": 0.35,
+    "stopSpeed": 0.1,
+    "bounceRestitution": 0.75,
+    "bounceFriction": 0.969,
+    "minBounceSpeed": 1.0,
+    "windAirborneFactor": 0.12,
+    "windGroundFactor": 0.01,
+    "maxSubstepDistance": 0.08,
+    "maxSubsteps": 16
+  },
+  "goalFrame": {
+    "postRestitution": 0.6,
+    "postFriction": 0.9,
+    "netRestitution": 0.05,
+    "netFriction": 0.35,
+    "outerNetRestitution": 0.25
+  },
+  "boards": {
+    "restitution": 0.45,
+    "friction": 0.8
+  },
+  "movement": {
+    "maxSpeed": 11.4,
+    "acceleration": 43.0,
+    "braking": 63.0,
+    "turnGrip": 60.0,
+    "bodyRadius": 0.4
+  }
+}

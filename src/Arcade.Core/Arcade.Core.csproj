@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Simulation core: generic arcade engine pieces (simulation clock, input model,
+    content packs, localization) and the football module (Football/ folder).
+    Must never reference MonoGame or any rendering technology.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Arcade.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Arcade.Tests" />
+  </ItemGroup>
+</Project>

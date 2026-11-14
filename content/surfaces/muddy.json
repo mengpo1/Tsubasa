@@ -1,0 +1,13 @@
+{
+  "id": "muddy",
+  "nameKey": "surface.muddy",
+  "rollingResistanceScale": 3.0,
+  "rollingDragScale": 2.2,
+  "bounceRestitutionScale": 0.4,
+  "bounceFrictionScale": 0.6,
+  "airDragScale": 2.5,
+  "bounceDeviationDegrees": 0,
+  "rollingDeviationDegreesPerMetre": 0,
+  "staminaDrainScale": 1.8,
+  "playerGripScale": 0.8
+}

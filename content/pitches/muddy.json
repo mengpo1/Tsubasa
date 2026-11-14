@@ -1,0 +1,29 @@
+{
+  "id": "muddy",
+  "nameKey": "pitch.muddy",
+  "surface": "muddy",
+  "length": 106.07,
+  "width": 69.49,
+  "goalWidth": 7.32,
+  "goalHeight": 2.44,
+  "goalDepth": 2.0,
+  "postRadius": 0.06,
+  "penaltyAreaDepth": 16.46,
+  "penaltyAreaWidth": 40.23,
+  "goalAreaDepth": 5.49,
+  "goalAreaWidth": 18.29,
+  "penaltySpotDistance": 10.97,
+  "centreCircleRadius": 9.14,
+  "cornerArcRadius": 1.0,
+  "lineWidth": 0.12,
+  "boundaryMargin": 6.0,
+  "visual": {
+    "grassTexture": "pitch.grass.muddy",
+    "surroundTexture": "pitch.surround",
+    "stripeWidth": 5.25,
+    "stripeShade": 0.9,
+    "lineColor": "#EEF2EE",
+    "goalColor": "#F8F8F8",
+    "netTexture": "goal.net"
+  }
+}

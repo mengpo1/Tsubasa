@@ -1,0 +1,28 @@
+{
+  // Classic Amiga look. Presentation only: the simulation is identical in every look.
+  // [Reconstitué] Amiga PAL low resolution: the title picture of the game is 320x256 (IFF header).
+  // The exact in-game viewport (lines hidden by the score panel, overscan) is not verified.
+  "virtualWidth": 320,
+  "virtualHeight": 256,
+  "windowScale": 3,
+  // [Reconstitué] 912 px across the 69.49 m pitch (KO2 pitch picture: 1280x1536, lines 912x1392 px).
+  "pixelsPerMetre": 13.1234,
+  "heightScale": 0.5,
+  // 1 = square pixels. A PAL Amiga on a 4:3 monitor shows pixels about 1.07 wide: set 1.0667 to try it.
+  "pixelAspect": 1.0,
+  // [À vérifier] Whether the goals are part of the pitch tiles is not established: keep the drawn goals for now.
+  "drawGoals": true,
+  "sprites": {
+    // [À vérifier] The sprite palette has a shadow colour (index 7): player shadows are assumed to be in the frames.
+    "playerShadows": false,
+    // [Reconstitué, Open Kick-Off] Shadow of a high ball: h px right and h px up of the ground point.
+    "ballShadowShift": [1, -1],
+    "ballShadowShrinks": false,
+    "markerHeight": 1.9
+  },
+  // [Reconstitué] Centre spot of the composed pitch picture: top-left corner flag at (176, 64) + half the pitch.
+  "pitchBitmap": {
+    "centre": [632, 760],
+    "pixelsPerMetre": 13.1234
+  }
+}

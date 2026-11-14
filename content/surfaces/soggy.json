@@ -1,0 +1,13 @@
+{
+  "id": "soggy",
+  "nameKey": "surface.soggy",
+  "rollingResistanceScale": 1.8,
+  "rollingDragScale": 1.4,
+  "bounceRestitutionScale": 0.6,
+  "bounceFrictionScale": 0.85,
+  "airDragScale": 1.0,
+  "bounceDeviationDegrees": 0,
+  "rollingDeviationDegreesPerMetre": 0,
+  "staminaDrainScale": 1.3,
+  "playerGripScale": 0.9
+}

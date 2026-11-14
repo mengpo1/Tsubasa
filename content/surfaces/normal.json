@@ -1,0 +1,13 @@
+{
+  "id": "normal",
+  "nameKey": "surface.normal",
+  "rollingResistanceScale": 1.0,
+  "rollingDragScale": 1.0,
+  "bounceRestitutionScale": 1.0,
+  "bounceFrictionScale": 1.0,
+  "airDragScale": 1.0,
+  "bounceDeviationDegrees": 0,
+  "rollingDeviationDegreesPerMetre": 0,
+  "staminaDrainScale": 1.0,
+  "playerGripScale": 1.0
+}

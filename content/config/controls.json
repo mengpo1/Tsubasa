@@ -1,0 +1,85 @@
+{
+  // One-button contextual controls. Timings in seconds, distances in metres, speeds in m/s.
+  "contact": {
+    "footRadius": 0.61,
+    "footHeight": 0.45,
+    "bodyRadius": 0.4,
+    "bodyHeight": 1.9,
+    "touchCooldown": 0.15
+  },
+  "dribble": {
+    "baseSpeed": 2.29,
+    "runFactor": 1.125,
+    "maxRelativeSpeed": 13.0,
+    "frontDot": -0.2,
+    // Penalty Box Dribble (Kick Off 2 v1.4: computer players only; set humanReduction to 2.29 for World Cup 90 / Player Manager).
+    "penaltyBoxDribble": {
+      "zoneDepth": 16.46,
+      "humanReduction": 0.0,
+      "computerReduction": 3.05
+    }
+  },
+  "deflection": {
+    "restitution": 0.35,
+    "tangentialKeep": 0.7
+  },
+  "shot": {
+    "window": 0.3,
+    "reach": 1.7,
+    "maxBallHeight": 0.8,
+    "baseSpeed": 22.0,
+    "runFactor": 0.5,
+    "lift": 4.0
+  },
+  "trap": {
+    "maxBallHeight": 1.3,
+    "maxRelativeSpeed": 30.0,
+    "holdDistance": 0.4,
+    "holdGain": 10.0,
+    "maxHoldSpeed": 6.0,
+    "loseDistance": 1.6
+  },
+  "pass": {
+    "minSpeed": 9.0,
+    "maxSpeed": 24.0,
+    "chargeTime": 0.6,
+    "lift": 0.0
+  },
+  "chip": {
+    "reach": 1.6,
+    "possessionWindow": 0.7,
+    "reversalDot": -0.69,
+    "reversalWindow": 0.12,
+    "speed": 9.0,
+    "lift": 7.0
+  },
+  "aftertouch": {
+    "enabled": true,
+    "duration": 0.55,
+    "curlAcceleration": 11.0,
+    "dipAcceleration": 0.0,
+    "liftAcceleration": 0.0,
+    "shotScale": 1.0,
+    "passScale": 0.6,
+    "chipScale": 0.8
+  },
+  "keeper": {
+    "reach": 0.9,
+    "maxHeight": 2.4,
+    "catchMaxSpeed": 21.0,
+    "parryRestitution": 0.45,
+    "carryHeight": 1.1
+  },
+  "selection": {
+    "switchMargin": 1.5,
+    "minSwitchInterval": 0.3,
+    "anticipation": 0.25
+  },
+  "setPieces": {
+    "kickOff": { "minSpeed": 5.0, "maxSpeed": 18.0, "minLift": 0.0, "maxLift": 3.0, "chargeTime": 0.8, "aftertouchScale": 0.5 },
+    "throwIn": { "minSpeed": 6.0, "maxSpeed": 14.0, "minLift": 2.0, "maxLift": 5.0, "chargeTime": 0.8, "aftertouchScale": 0.0 },
+    "corner": { "minSpeed": 10.0, "maxSpeed": 26.0, "minLift": 4.0, "maxLift": 9.0, "chargeTime": 0.9, "aftertouchScale": 1.0 },
+    "goalKick": { "minSpeed": 14.0, "maxSpeed": 28.0, "minLift": 6.0, "maxLift": 11.0, "chargeTime": 0.9, "aftertouchScale": 0.6 },
+    "throwInHeight": 2.0
+  }
+}
