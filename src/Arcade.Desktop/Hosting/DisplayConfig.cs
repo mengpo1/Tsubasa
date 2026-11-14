@@ -24,8 +24,29 @@ internal sealed record DisplayConfig : IContentData
 
     public required RadarConfig Radar { get; init; }
 
+    /// <summary>On-screen width / height of one virtual pixel (1 = square; about 1.07 for a PAL Amiga low-res screen on a 4:3 monitor).</summary>
+    public float PixelAspect { get; init; } = 1f;
+
+    /// <summary>Draw the goals with lines and nets. Off when the look's pitch images already contain them.</summary>
+    public bool DrawGoals { get; init; } = true;
+
+    public SpriteConfig Sprites { get; init; } = new();
+
+    /// <summary>
+    /// When set, a pitch is drawn from the image <c>pitch.bitmap.&lt;pitch id&gt;</c> (if available) instead of
+    /// procedurally. Purely visual: the playing area keeps the dimensions of the pitch data.
+    /// </summary>
+    public PitchBitmapConfig? PitchBitmap { get; init; }
+
     public void Validate(ICollection<string> problems)
     {
+        DataChecks.InRange(problems, "pixelAspect", PixelAspect, 0.5f, 2f);
+        DataChecks.Nested(problems, "sprites", Sprites);
+        if (PitchBitmap is not null)
+        {
+            DataChecks.Nested(problems, "pitchBitmap", PitchBitmap);
+        }
+
         DataChecks.InRange(problems, "virtualWidth", VirtualWidth, 160, 3840);
         DataChecks.InRange(problems, "virtualHeight", VirtualHeight, 120, 2160);
         DataChecks.InRange(problems, "windowScale", WindowScale, 1, 8);
@@ -76,5 +97,48 @@ internal sealed record RadarConfig : IContentData
     {
         DataChecks.InRange(problems, "width", Width, 20, 400);
         DataChecks.InRange(problems, "opacity", Opacity, 0f, 1f);
+    }
+}
+
+internal sealed record SpriteConfig : IContentData
+{
+    /// <summary>Draw a separate shadow under each player (off when the sprites contain their shadow).</summary>
+    public bool PlayerShadows { get; init; } = true;
+
+    /// <summary>Ball shadow offset from the ground point, in screen pixels per pixel of displayed height ([0, 0] = straight below).</summary>
+    public IReadOnlyList<float> BallShadowShift { get; init; } = [0f, 0f];
+
+    /// <summary>The ball shadow gets smaller as the ball rises.</summary>
+    public bool BallShadowShrinks { get; init; } = true;
+
+    /// <summary>Height of the selection marker above the player's ground point (m).</summary>
+    public float MarkerHeight { get; init; } = 2.6f;
+
+    public void Validate(ICollection<string> problems)
+    {
+        if (BallShadowShift.Count != 2)
+        {
+            problems.Add("ballShadowShift must be [x, y]");
+        }
+
+        DataChecks.InRange(problems, "markerHeight", MarkerHeight, 0f, 10f);
+    }
+}
+
+/// <summary>Placement of full-pitch images: which image pixel is the centre spot, and the image scale.</summary>
+internal sealed record PitchBitmapConfig : IContentData
+{
+    public required IReadOnlyList<float> Centre { get; init; }
+
+    public required float PixelsPerMetre { get; init; }
+
+    public void Validate(ICollection<string> problems)
+    {
+        if (Centre.Count != 2)
+        {
+            problems.Add("centre must be [x, y]");
+        }
+
+        DataChecks.InRange(problems, "pixelsPerMetre", PixelsPerMetre, 1f, 128f);
     }
 }

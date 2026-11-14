@@ -15,6 +15,7 @@ internal enum SystemAction
     ToggleAftertouch,
     NextPitch,
     NextLanguage,
+    NextTheme,
     ToggleRadar,
     ZoomIn,
     ZoomOut,

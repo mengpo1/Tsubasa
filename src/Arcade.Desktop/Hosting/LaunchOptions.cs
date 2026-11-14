@@ -19,6 +19,8 @@ internal sealed record LaunchOptions
           --mod <id>             Enable a mod (repeatable, load order = priority). Overrides settings.json
           --no-mods              Disable every mod
           --list-mods            Print installed mods and exit
+          --theme <id>           Visual theme (classic-amiga, custom, ...). Overrides settings.json; F8 cycles
+          --list-themes          Print installed themes and exit
           --lang <code>          Language (en, fr, ...)
           --pitch <id>           Training pitch (normal, wet, soggy, artificial, icy, muddy, bumpy)
           --team <id>            Team of the training player (training)
@@ -52,6 +54,10 @@ internal sealed record LaunchOptions
     public bool NoMods { get; init; }
 
     public bool ListMods { get; init; }
+
+    public string? Theme { get; init; }
+
+    public bool ListThemes { get; init; }
 
     public string? Language { get; init; }
 
@@ -95,6 +101,8 @@ internal sealed record LaunchOptions
                 "--mod" => AddMod(options, mods, Next()),
                 "--no-mods" => options with { NoMods = true },
                 "--list-mods" => options with { ListMods = true },
+                "--theme" => options with { Theme = Next() },
+                "--list-themes" => options with { ListThemes = true },
                 "--lang" => options with { Language = Next() },
                 "--pitch" => options with { Pitch = Next() },
                 "--team" => options with { Team = Next() },

@@ -31,6 +31,7 @@
     "toggleAftertouch": ["T"],
     "nextPitch": ["F3"],
     "nextLanguage": ["F7"],
+    "nextTheme": ["F8"],
     "toggleRadar": ["X"],
     "zoomIn": ["OemCloseBrackets"],
     "zoomOut": ["OemOpenBrackets"],

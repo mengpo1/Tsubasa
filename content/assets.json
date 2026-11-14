@@ -27,6 +27,7 @@
       "frames": [0],
       "frameDuration": 1.0,
       "anchor": [16, 29],
+      "pixelsPerMetre": 16,
       "palette": [
         { "marker": "#FF0000", "slot": "shirt" },
         { "marker": "#C00000", "slot": "shirt", "brightness": 0.72 },
@@ -45,6 +46,7 @@
       "frameDuration": 0.065,
       "referenceSpeed": 8.0,
       "anchor": [16, 29],
+      "pixelsPerMetre": 16,
       "palette": [
         { "marker": "#FF0000", "slot": "shirt" },
         { "marker": "#C00000", "slot": "shirt", "brightness": 0.72 },
@@ -62,6 +64,7 @@
       "frames": [7],
       "frameDuration": 0.25,
       "anchor": [16, 29],
+      "pixelsPerMetre": 16,
       "palette": [
         { "marker": "#FF0000", "slot": "shirt" },
         { "marker": "#C00000", "slot": "shirt", "brightness": 0.72 },
@@ -79,7 +82,36 @@
       "frames": [0, 1, 2, 3],
       "frameDuration": 0.05,
       "referenceSpeed": 4.0,
-      "anchor": [3, 3]
+      "anchor": [3, 3],
+      "pixelsPerMetre": 16
+    },
+    "shadow.player": {
+      "texture": "shadow.default",
+      "frameWidth": 16,
+      "frameHeight": 8,
+      "directions": 1,
+      "frames": [0],
+      "frameDuration": 1.0,
+      "anchor": [8, 4],
+      "pixelsPerMetre": 16
+    },
+    "shadow.ball": {
+      "texture": "shadow.default",
+      "frameWidth": 16,
+      "frameHeight": 8,
+      "directions": 1,
+      "frames": [0],
+      "frameDuration": 1.0,
+      "anchor": [8, 4],
+      "pixelsPerMetre": 32
     }
+  },
+  "states": {
+    "idle": ["player.idle"],
+    "run": ["player.run"],
+    "kick": ["player.kick"],
+    "player.shadow": ["shadow.player"],
+    "ball": ["ball.roll"],
+    "ball.shadow": ["shadow.ball"]
   }
 }

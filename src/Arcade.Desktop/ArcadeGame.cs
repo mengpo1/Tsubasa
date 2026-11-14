@@ -5,6 +5,7 @@ using Arcade.Core.Football;
 using Arcade.Core.Football.Control;
 using Arcade.Core.Football.Match;
 using Arcade.Core.Input;
+using Arcade.Core.Localization;
 using Arcade.Core.Simulation;
 using Arcade.Desktop.Camera;
 using Arcade.Desktop.Hosting;
@@ -28,6 +29,10 @@ internal sealed class ArcadeGame : Game
     private const string DefaultPitch = "normal";
     private const ulong Seed = 20240611;
     private const float NoticeSeconds = 3f;
+    private const string DefaultTheme = "custom";
+
+    /// <summary>The HUD is laid out for this virtual height, whatever the look's resolution.</summary>
+    private const float HudReferenceHeight = 360f;
 
     private static readonly SystemAction[] SceneActions = [SystemAction.ResetBall, SystemAction.ToggleAftertouch, SystemAction.NextPitch];
 
@@ -44,6 +49,8 @@ internal sealed class ArcadeGame : Game
     private readonly List<string> _notices = [];
 
     private GameData _data = null!;
+    private Localizer _localizer = null!;
+    private string? _theme;
     private TextureStore _textures = null!;
     private FontSet _fonts = null!;
     private InputSampler _input = null!;
@@ -68,10 +75,12 @@ internal sealed class ArcadeGame : Game
         _gameRoot = gameRoot;
         _settings = settings;
         _log = log;
-        _graphics = new GraphicsDeviceManager(this) { SynchronizeWithVerticalRetrace = true };
+        // Borderless desktop full screen: no display mode change, which behaves best on macOS (and with integer scaling).
+        _graphics = new GraphicsDeviceManager(this) { SynchronizeWithVerticalRetrace = true, HardwareModeSwitch = false };
         _configuredMods = options.Mods ?? settings.Mods;
         _modsEnabled = !options.NoMods;
         _captureTicks = [.. options.CaptureTicks];
+        _theme = options.Theme ?? settings.Theme ?? (ContentLoader.ListThemes(gameRoot).Contains(DefaultTheme) ? DefaultTheme : null);
         _debug.Enabled = options.Debug;
         if (options.ScriptPath is not null)
         {
@@ -91,11 +100,8 @@ internal sealed class ArcadeGame : Game
     {
         _batch = new SpriteBatch(GraphicsDevice);
         LoadData(_settings.Language ?? "en", initial: true);
-        int scale = _options.WindowScale ?? _settings.WindowScale ?? _data.Display.WindowScale;
-        _graphics.PreferredBackBufferWidth = _data.Display.VirtualWidth * scale;
-        _graphics.PreferredBackBufferHeight = _data.Display.VirtualHeight * scale;
         _graphics.IsFullScreen = _options.Fullscreen;
-        _graphics.ApplyChanges();
+        ApplyWindowSize();
     }
 
     protected override void Update(GameTime gameTime)
@@ -166,7 +172,7 @@ internal sealed class ArcadeGame : Game
         _batch.Draw(_worldTarget, destination, Color.White);
         _batch.End();
 
-        float ui = destination.Height / (float)_data.Display.VirtualHeight;
+        float ui = destination.Height / HudReferenceHeight;
         var screen = new Rectangle(0, 0, frame.Width, frame.Height);
         _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp);
         if (_radarVisible)
@@ -183,7 +189,7 @@ internal sealed class ArcadeGame : Game
         _debug.DrawText(_batch, _textures.Pixel, _fonts.Regular(6.5f * ui), world, primary, _scene.Match, _data.PackIds, 8f * ui, 40f * ui);
         if (_clock.Paused)
         {
-            HudCommon.DrawPaused(_batch, _textures.Pixel, _fonts, _data.Localizer, screen, ui);
+            HudCommon.DrawPaused(_batch, _textures.Pixel, _fonts, _localizer, screen, ui);
         }
 
         _batch.End();
@@ -223,7 +229,7 @@ internal sealed class ArcadeGame : Game
         IReadOnlyList<string> mods = !_modsEnabled
             ? []
             : _configuredMods.Count > 0 || initial ? _configuredMods : ContentLoader.ListInstalledMods(_gameRoot);
-        GameData data = GameData.Load(_gameRoot, mods, _options.Language ?? language, _log);
+        GameData data = GameData.Load(_gameRoot, mods, _theme, _options.Language ?? language, _log);
         string pitch = (_scene as TrainingScene)?.PitchId ?? _options.Pitch ?? DefaultPitch;
         if (!data.Football.Pitches.ContainsKey(pitch))
         {
@@ -245,39 +251,112 @@ internal sealed class ArcadeGame : Game
             throw;
         }
 
-        _textures?.Dispose();
         _fonts?.Dispose();
         _data = data;
-        _textures = new TextureStore(GraphicsDevice, data.Repository, data.Assets, _log);
+        _localizer = data.Localizer;
         _fonts = fonts;
         _input = new InputSampler(data.Input);
         _inputs = new ControlInput[_input.ControlSets];
-        _camera = new Camera2D(data.Display.Camera);
-        _pitchRenderer = new PitchRenderer(data.Display.PixelsPerMetre);
-        _worldRenderer = new WorldRenderer(data.Display.PixelsPerMetre);
         _scene = scene;
         _clock = new FixedStepClock(data.Football.Physics.StepsPerSecond);
         _radarVisible = data.Display.Radar.Visible;
+        foreach (ContentIssue issue in data.Issues)
+        {
+            _log.Warn("content", issue.Message, ("pack", issue.PackId));
+        }
+
+        ApplyVisuals(data);
+        Window.Title = _localizer.Get("app.title");
+    }
+
+    /// <summary>
+    /// (Re)creates everything that depends on the look: textures, animation mapping, renderers, camera and the virtual
+    /// screen. The scene, and therefore the simulation, is untouched: both looks share exactly the same game.
+    /// </summary>
+    private void ApplyVisuals(GameData data)
+    {
+        TextureStore? defaultLook = data.DefaultRepository is not null && data.DefaultAssets is not null
+            ? new TextureStore(GraphicsDevice, data.DefaultRepository, data.DefaultAssets, _log)
+            : null;
+        var textures = new TextureStore(GraphicsDevice, data.Repository, data.Assets, _log, defaultLook);
+        var animations = AnimationStateMap.Resolve(data.Assets, textures.IsAvailable, data.DefaultAssets, defaultLook is null ? null : defaultLook.IsAvailable);
+        foreach (string note in animations.Notes)
+        {
+            _log.Debug("assets", note, ("look", data.ThemeId ?? "default"));
+        }
+
+        IReadOnlyList<string> missing = data.ThemeId is null ? [] : textures.MissingTextures();
+        foreach (string id in missing)
+        {
+            _log.Warn("assets", "Theme resource not installed, temporary replacement shown", ("theme", data.ThemeId), ("id", id), ("path", data.Assets.Textures[id]));
+        }
+
+        _textures?.Dispose();
+        _textures = textures;
+        _camera = new Camera2D(data.Display.Camera);
+        _pitchRenderer = new PitchRenderer(data.Display.PixelsPerMetre, data.Display.PitchBitmap);
+        _worldRenderer = new WorldRenderer(data.Display, animations);
         _worldTarget?.Dispose();
         _worldTarget = new RenderTarget2D(GraphicsDevice, data.Display.VirtualWidth, data.Display.VirtualHeight);
         _camera.SnapTo(new Num.Vector2(_scene.World.Ball.Position.X, _scene.World.Ball.Position.Y));
+
         _notices.Clear();
         int problems = data.Issues.Count;
         if (problems > 0)
         {
-            _notices.Add(data.Localizer.GetPlural("content.problems", problems));
-            foreach (ContentIssue issue in data.Issues)
-            {
-                _log.Warn("content", issue.Message, ("pack", issue.PackId));
-            }
+            _notices.Add(_localizer.GetPlural("content.problems", problems));
         }
 
-        if (data.PackIds.Count > 1)
+        string[] mods = [.. data.Repository.Packs.Where(pack => pack.Kind == PackKind.Mod).Select(pack => pack.Id)];
+        if (mods.Length > 0)
         {
-            _notices.Add(data.Localizer.Get("content.modsActive", ("list", string.Join(", ", data.PackIds.Skip(1)))));
+            _notices.Add(_localizer.Get("content.modsActive", ("list", string.Join(", ", mods))));
         }
 
-        Window.Title = data.Localizer.Get("app.title");
+        if (missing.Count > 0)
+        {
+            _notices.Add(_localizer.GetPlural("theme.missing", missing.Count, ("name", data.ThemeName ?? data.ThemeId ?? "?")));
+        }
+    }
+
+    /// <summary>Switches to the next installed theme without restarting the match (F8).</summary>
+    private void NextTheme()
+    {
+        IReadOnlyList<string> themes = ContentLoader.ListThemes(_gameRoot);
+        if (themes.Count == 0)
+        {
+            return;
+        }
+
+        int index = _theme is null ? -1 : themes.ToList().IndexOf(_theme);
+        string next = themes[(index + 1) % themes.Count];
+        string[] mods = [.. _data.Repository.Packs.Where(pack => pack.Kind == PackKind.Mod).Select(pack => pack.Id)];
+        try
+        {
+            GameData data = GameData.Load(_gameRoot, mods, next, _localizer.Language, _log);
+            _theme = next;
+            _data = data;
+            ApplyVisuals(data);
+            if (!_graphics.IsFullScreen)
+            {
+                ApplyWindowSize();
+            }
+
+            ShowNotice(_localizer.Get("theme.active", ("name", data.ThemeName ?? next)));
+        }
+        catch (ContentException exception)
+        {
+            _log.Error("content", "Theme switch failed; keeping the current look", ("error", exception.Message));
+            ShowNotice(exception.Message);
+        }
+    }
+
+    private void ApplyWindowSize()
+    {
+        int scale = _options.WindowScale ?? _settings.WindowScale ?? _data.Display.WindowScale;
+        _graphics.PreferredBackBufferWidth = (int)MathF.Round(_data.Display.VirtualWidth * _data.Display.PixelAspect * scale);
+        _graphics.PreferredBackBufferHeight = _data.Display.VirtualHeight * scale;
+        _graphics.ApplyChanges();
     }
 
     private MatchSettings CreateMatchSettings(string pitch, bool aftertouch)
@@ -305,8 +384,8 @@ internal sealed class ArcadeGame : Game
     {
         try
         {
-            LoadData(_data.Localizer.Language, initial: false);
-            ShowNotice(_data.Localizer.Get("content.reloaded"));
+            LoadData(_localizer.Language, initial: false);
+            ShowNotice(_localizer.Get("content.reloaded"));
         }
         catch (ContentException exception)
         {
@@ -353,11 +432,16 @@ internal sealed class ArcadeGame : Game
 
         if (_input.WasPressed(SystemAction.NextLanguage))
         {
-            var languages = _data.Localizer.Languages;
-            int index = languages.ToList().FindIndex(language => language.Code == _data.Localizer.Language);
-            _data.Localizer.SetLanguage(languages[(index + 1) % languages.Count].Code);
+            var languages = _localizer.Languages;
+            int index = languages.ToList().FindIndex(language => language.Code == _localizer.Language);
+            _localizer.SetLanguage(languages[(index + 1) % languages.Count].Code);
             _scene.LanguageChanged();
-            Window.Title = _data.Localizer.Get("app.title");
+            Window.Title = _localizer.Get("app.title");
+        }
+
+        if (_input.WasPressed(SystemAction.NextTheme))
+        {
+            NextTheme();
         }
 
         if (_input.WasPressed(SystemAction.ToggleRadar))
@@ -410,11 +494,13 @@ internal sealed class ArcadeGame : Game
 
     private Rectangle FitVirtualScreen(int width, int height)
     {
-        int virtualWidth = _data.Display.VirtualWidth;
+        // Integer scaling of the virtual screen (nearest neighbour, see Draw); a pixel aspect other than 1 widens
+        // the image horizontally, which makes the column widths uneven by at most one pixel.
+        float virtualWidth = _data.Display.VirtualWidth * _data.Display.PixelAspect;
         int virtualHeight = _data.Display.VirtualHeight;
-        int integer = Math.Min(width / virtualWidth, height / virtualHeight);
-        float scale = integer >= 1 ? integer : MathF.Min(width / (float)virtualWidth, height / (float)virtualHeight);
-        int w = (int)(virtualWidth * scale);
+        int integer = Math.Min((int)(width / virtualWidth), height / virtualHeight);
+        float scale = integer >= 1 ? integer : MathF.Min(width / virtualWidth, height / (float)virtualHeight);
+        int w = (int)MathF.Round(virtualWidth * scale);
         int h = (int)(virtualHeight * scale);
         return new Rectangle((width - w) / 2, (height - h) / 2, w, h);
     }

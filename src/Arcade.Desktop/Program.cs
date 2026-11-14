@@ -26,6 +26,16 @@ try
         return 0;
     }
 
+    if (options.ListThemes)
+    {
+        foreach (string theme in ContentLoader.ListThemes(root))
+        {
+            Console.WriteLine(theme);
+        }
+
+        return 0;
+    }
+
     UserSettings settings = UserSettings.Load(root);
     using var game = new ArcadeGame(options, root, settings, log);
     game.Run();

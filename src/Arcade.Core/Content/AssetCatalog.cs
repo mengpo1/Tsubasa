@@ -122,6 +122,12 @@ public sealed record AnimationDefinition : IContentData
     /// <summary>Optional extra display offset in pixels.</summary>
     public IReadOnlyList<int> Offset { get; init; } = [0, 0];
 
+    /// <summary>
+    /// Sprite pixels per metre of the sheet (0 = the display's <c>pixelsPerMetre</c>). Lets sprites drawn for another
+    /// scale (e.g. the default look shown as a replacement inside a theme) keep their size relative to the pitch.
+    /// </summary>
+    public float PixelsPerMetre { get; init; }
+
     /// <summary>Indexed layout: frame-number offset between two directions (0 = rows layout).</summary>
     public int DirectionStride { get; init; }
 
@@ -159,6 +165,7 @@ public sealed record AnimationDefinition : IContentData
 
         DataChecks.Positive(problems, "frameDuration", FrameDuration);
         DataChecks.NonNegative(problems, "referenceSpeed", ReferenceSpeed);
+        DataChecks.NonNegative(problems, "pixelsPerMetre", PixelsPerMetre);
         DataChecks.NonNegative(problems, "directionStride", DirectionStride);
         DataChecks.NonNegative(problems, "sheetColumns", SheetColumns);
         DataChecks.Positive(problems, "heightStep", HeightStep);

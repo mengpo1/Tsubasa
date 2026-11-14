@@ -1,11 +1,15 @@
 using Arcade.Core.Content;
 using Arcade.Core.Football.Pitch;
+using Arcade.Desktop.Hosting;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Arcade.Desktop.Rendering;
 
-/// <summary>Draws the ground: surroundings, grass with mowing stripes, boards and markings.</summary>
+/// <summary>
+/// Draws the ground: either a full-pitch image of the active look (<c>pitch.bitmap.&lt;pitch id&gt;</c>, placed by
+/// <see cref="DisplayConfig.PitchBitmap"/>), or procedurally: surroundings, grass with mowing stripes, boards and markings.
+/// </summary>
 internal sealed class PitchRenderer
 {
     /// <summary>How far the grass texture extends beyond the lines (m).</summary>
@@ -16,15 +20,26 @@ internal sealed class PitchRenderer
 
     private static readonly Color BoardColor = new(30, 34, 48);
 
-    private readonly float _basePixelsPerMetre;
+    public const string BitmapPrefix = "pitch.bitmap.";
 
-    public PitchRenderer(float basePixelsPerMetre)
+    private readonly float _basePixelsPerMetre;
+    private readonly PitchBitmapConfig? _bitmap;
+
+    public PitchRenderer(float basePixelsPerMetre, PitchBitmapConfig? bitmap = null)
     {
         _basePixelsPerMetre = basePixelsPerMetre;
+        _bitmap = bitmap;
     }
 
     public void Draw(SpriteBatch batch, TextureStore textures, PitchGeometry pitch, ViewTransform view)
     {
+        string bitmapId = BitmapPrefix + pitch.Definition.Id;
+        if (_bitmap is not null && textures.IsAvailable(bitmapId))
+        {
+            DrawBitmap(batch, textures.Get(bitmapId), _bitmap, view);
+            return;
+        }
+
         PitchVisual visual = pitch.Definition.Visual;
         float hw = pitch.HalfWidth;
         float hl = pitch.HalfLength;
@@ -35,6 +50,16 @@ internal sealed class PitchRenderer
         DrawStripes(batch, textures.Pixel, pitch, visual, view, grassMargin);
         DrawBoards(batch, textures.Pixel, pitch, view);
         DrawMarkings(batch, textures.Pixel, pitch, visual, view);
+    }
+
+    private static void DrawBitmap(SpriteBatch batch, Texture2D texture, PitchBitmapConfig bitmap, ViewTransform view)
+    {
+        float left = -bitmap.Centre[0] / bitmap.PixelsPerMetre;
+        float top = -bitmap.Centre[1] / bitmap.PixelsPerMetre;
+        Vector2 a = view.ToScreen(left, top);
+        Vector2 b = view.ToScreen(left + (texture.Width / bitmap.PixelsPerMetre), top + (texture.Height / bitmap.PixelsPerMetre));
+        var destination = new Rectangle((int)MathF.Round(a.X), (int)MathF.Round(a.Y), (int)MathF.Round(b.X - a.X), (int)MathF.Round(b.Y - a.Y));
+        batch.Draw(texture, destination, Color.White);
     }
 
     private void Tile(SpriteBatch batch, Texture2D texture, ViewTransform view, float left, float top, float right, float bottom)

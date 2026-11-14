@@ -1,0 +1,127 @@
+{
+  "textures": {
+    "classic.players": "imported/sprites/players-style1a.png",
+    "classic.keeper": "imported/sprites/keeper.png",
+    "classic.ball": "imported/sprites/ball.png",
+    "pitch.bitmap.normal": "imported/pitches/normal.png",
+    "pitch.bitmap.wet": "imported/pitches/wet.png",
+    "pitch.bitmap.soggy": "imported/pitches/soggy.png",
+    "pitch.bitmap.artificial": "imported/pitches/artificial.png",
+    "pitch.bitmap.icy": "imported/pitches/icy.png",
+    "pitch.bitmap.muddy": "imported/pitches/muddy.png",
+    "pitch.bitmap.bumpy": "imported/pitches/bumpy.png"
+  },
+  "animations": {
+    "classic.idle": {
+      "texture": "classic.players",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "directions": 8,
+      "frames": [0],
+      "frameDuration": 1.0,
+      "anchor": [8, 8],
+      "sheetColumns": 20,
+      "directionStride": 8,
+      "palette": [
+        {
+          "marker": "#FF0000",
+          "slot": "shirt"
+        },
+        {
+          "marker": "#0000FF",
+          "slot": "shorts"
+        }
+      ]
+    },
+    "classic.run": {
+      "texture": "classic.players",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "directions": 8,
+      "frames": [0, 3, 2, 1, 1, 2, 3, 4, 7, 6, 5, 5, 6, 7],
+      "frameDuration": 0.0333,
+      "anchor": [8, 8],
+      "sheetColumns": 20,
+      "referenceSpeed": 11.4,
+      "directionStride": 8,
+      "palette": [
+        {
+          "marker": "#FF0000",
+          "slot": "shirt"
+        },
+        {
+          "marker": "#0000FF",
+          "slot": "shorts"
+        }
+      ]
+    },
+    "classic.keeper.idle": {
+      "texture": "classic.keeper",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "directions": 8,
+      "frames": [0],
+      "frameDuration": 1.0,
+      "anchor": [8, 8],
+      "sheetColumns": 20,
+      "directionStride": 8
+    },
+    "classic.keeper.run": {
+      "texture": "classic.keeper",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "directions": 8,
+      "frames": [0, 3, 2, 1, 1, 2, 3, 4, 7, 6, 5, 5, 6, 7],
+      "frameDuration": 0.0333,
+      "anchor": [8, 8],
+      "sheetColumns": 20,
+      "referenceSpeed": 11.4,
+      "directionStride": 8
+    },
+    "classic.ball.low": {
+      "texture": "classic.ball",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "directions": 1,
+      "frames": [0, 1, 2, 3],
+      "frameDuration": 1.0,
+      "anchor": [8, 8],
+      "sheetColumns": 20,
+      "driver": "height",
+      "heightStep": 1
+    },
+    "classic.ball.high": {
+      "texture": "classic.ball",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "directions": 1,
+      "frames": [4, 5, 6, 7],
+      "frameDuration": 1.0,
+      "anchor": [8, 8],
+      "sheetColumns": 20,
+      "driver": "height",
+      "heightStep": 16
+    },
+    "classic.ball.shadow": {
+      "texture": "classic.ball",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "directions": 1,
+      "frames": [8],
+      "frameDuration": 1.0,
+      "anchor": [8, 8],
+      "sheetColumns": 20
+    }
+  },
+  "states": {
+    "idle": ["classic.idle"],
+    "run": ["classic.run"],
+    "kick": null,
+    "keeper.idle": ["classic.keeper.idle"],
+    "keeper.run": ["classic.keeper.run"],
+    "keeper.kick": ["classic.keeper.idle"],
+    "ball": ["classic.ball.low"],
+    "ball.high": ["classic.ball.high"],
+    "ball.shadow": ["classic.ball.shadow"]
+  }
+}

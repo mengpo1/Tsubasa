@@ -19,6 +19,13 @@ internal sealed class GameData
         Display = repository.LoadData<DisplayConfig>(DisplayConfig.FileName);
         Input = repository.LoadData<InputConfig>(InputConfig.FileName);
         Localizer = Localizer.Load(repository, language, "en", log);
+        if (repository.Theme is ContentPack theme)
+        {
+            ThemeId = theme.Id;
+            ThemeName = theme.Manifest.Name;
+            DefaultRepository = repository.Without(theme);
+            DefaultAssets = DefaultRepository.LoadData<AssetCatalog>(AssetCatalog.FileName);
+        }
     }
 
     public ContentRepository Repository { get; }
@@ -35,29 +42,48 @@ internal sealed class GameData
 
     public Localizer Localizer { get; }
 
+    /// <summary>Active visual theme, or null for the default look.</summary>
+    public string? ThemeId { get; }
+
+    public string? ThemeName { get; }
+
+    /// <summary>The same content without the theme (default look), used for what the theme does not provide.</summary>
+    public ContentRepository? DefaultRepository { get; }
+
+    public AssetCatalog? DefaultAssets { get; }
+
     public IReadOnlyList<string> PackIds => [.. Repository.Packs.Select(pack => pack.Id)];
 
     /// <summary>
-    /// Loads base content plus mods. If the mods make the data invalid, the error is reported and the game
-    /// falls back to the base content alone instead of running in an inconsistent state. Base content errors are fatal.
+    /// Loads base content plus theme and mods. If the mods (then the theme) make the data invalid, the error is reported
+    /// and the game falls back without them instead of running in an inconsistent state. Base content errors are fatal.
     /// </summary>
-    public static GameData Load(string gameRoot, IReadOnlyList<string> mods, string language, GameLog log)
+    public static GameData Load(string gameRoot, IReadOnlyList<string> mods, string? theme, string language, GameLog log)
     {
         ArgumentNullException.ThrowIfNull(log);
-        ContentLoadResult loaded = ContentLoader.Load(new ContentLoadOptions(gameRoot, mods), log);
-        try
+        ArgumentNullException.ThrowIfNull(mods);
+        var issues = new List<ContentIssue>();
+        (IReadOnlyList<string> Mods, string? Theme)[] attempts = [(mods, theme), ([], theme), ([], null)];
+        for (int i = 0; ; i++)
         {
-            return new GameData(loaded, loaded.Issues, language, log);
-        }
-        catch (ContentException exception) when (loaded.Repository.Packs.Count > 1)
-        {
-            log.Error("content", "Mods produce invalid data; falling back to the base content", ("error", exception.Message));
-            ContentLoadResult baseOnly = ContentLoader.Load(new ContentLoadOptions(gameRoot, []), log);
-            var issues = new List<ContentIssue>(loaded.Issues)
+            (IReadOnlyList<string> tryMods, string? tryTheme) = attempts[i];
+            if (i > 0 && tryMods.Count == attempts[i - 1].Mods.Count && tryTheme == attempts[i - 1].Theme)
             {
-                new(ContentIssueSeverity.Error, string.Join(",", mods), $"Mods disabled: {exception.Message}"),
-            };
-            return new GameData(baseOnly, issues, language, log);
+                continue;
+            }
+
+            ContentLoadResult loaded = ContentLoader.Load(new ContentLoadOptions(gameRoot, tryMods, tryTheme), log);
+            issues.AddRange(loaded.Issues.Where(issue => !issues.Contains(issue)));
+            try
+            {
+                return new GameData(loaded, issues, language, log);
+            }
+            catch (ContentException exception) when (i < attempts.Length - 1 && loaded.Repository.Packs.Count > 1)
+            {
+                string disabled = tryMods.Count > 0 ? string.Join(",", tryMods) : tryTheme ?? "?";
+                log.Error("content", "Invalid data; falling back", ("disabled", disabled), ("error", exception.Message));
+                issues.Add(new ContentIssue(ContentIssueSeverity.Error, disabled, $"Disabled: {exception.Message}"));
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Arcade.Desktop.Hosting;
 
 /// <summary>
 /// Optional per-installation settings (<c>settings.json</c> in the game folder, not versioned).
-/// Example: <c>{ "language": "fr", "mods": ["example-mod"] }</c>.
+/// Example: <c>{ "language": "fr", "mods": ["example-mod"], "theme": "classic-amiga" }</c>.
 /// </summary>
 internal sealed record UserSettings
 {
@@ -18,6 +18,9 @@ internal sealed record UserSettings
     public bool? Aftertouch { get; init; }
 
     public int? WindowScale { get; init; }
+
+    /// <summary>Visual theme id (folder of <c>content/themes/</c>), e.g. <c>classic-amiga</c> or <c>custom</c>.</summary>
+    public string? Theme { get; init; }
 
     public static UserSettings Load(string gameRoot)
     {
