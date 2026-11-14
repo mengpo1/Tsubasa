@@ -27,6 +27,16 @@ public sealed class ContentRepository
 
     public IReadOnlyList<ContentPack> Packs => _packs;
 
+    /// <summary>The theme pack, if one is loaded.</summary>
+    public ContentPack? Theme => _packs.Find(pack => pack.Kind == PackKind.Theme);
+
+    /// <summary>Same content without one pack (e.g. the theme, to find the default asset of an id).</summary>
+    public ContentRepository Without(ContentPack pack)
+    {
+        ArgumentNullException.ThrowIfNull(pack);
+        return pack.IsBase ? throw new ArgumentException("The base pack cannot be removed.", nameof(pack)) : new ContentRepository(_packs.Where(p => p != pack));
+    }
+
     public bool Exists(string relativePath) => TryResolve(relativePath, out _);
 
     public bool TryResolve(string relativePath, out ResolvedFile file)

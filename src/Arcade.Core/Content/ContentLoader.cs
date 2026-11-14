@@ -3,12 +3,19 @@ using Arcade.Core.Common;
 
 namespace Arcade.Core.Content;
 
-/// <summary>Where the game data lives and which mods to enable, in load order (later = higher priority).</summary>
-public sealed record ContentLoadOptions(string GameRoot, IReadOnlyList<string> EnabledMods)
+/// <summary>
+/// Where the game data lives, which visual theme to apply and which mods to enable, in load order
+/// (base, then theme, then mods; later = higher priority).
+/// </summary>
+public sealed record ContentLoadOptions(string GameRoot, IReadOnlyList<string> EnabledMods, string? Theme = null)
 {
     public const string BaseFolder = "content";
     public const string ModsFolder = "mods";
+    public const string ThemesFolder = "themes";
     public const string ManifestFile = "manifest.json";
+
+    /// <summary>The only data files a theme may provide: it changes the look, never the rules.</summary>
+    public static IReadOnlyList<string> ThemeDataFiles { get; } = [AssetCatalog.FileName, "config/display.json"];
 }
 
 public sealed record ContentLoadResult(ContentRepository Repository, IReadOnlyList<ContentIssue> Issues)
@@ -34,7 +41,7 @@ public static class ContentLoader
             throw new ContentException($"Base content folder not found: '{baseDirectory}'.");
         }
 
-        ContentPack basePack = ReadPack(baseDirectory, isBase: true, out IReadOnlyList<string> baseProblems);
+        ContentPack basePack = ReadPack(baseDirectory, PackKind.Base, out IReadOnlyList<string> baseProblems);
         if (baseProblems.Count > 0)
         {
             throw new ContentException($"Base content is invalid: {string.Join("; ", baseProblems)}");
@@ -42,6 +49,10 @@ public static class ContentLoader
 
         var packs = new List<ContentPack> { basePack };
         log.Info("content", "Base content loaded", ("files", basePack.Files.Count), ("path", baseDirectory));
+        if (!string.IsNullOrEmpty(options.Theme))
+        {
+            LoadTheme(options, packs, issues, log);
+        }
 
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (string modId in options.EnabledMods)
@@ -59,7 +70,7 @@ public static class ContentLoader
                 continue;
             }
 
-            ContentPack pack = ReadPack(modDirectory, isBase: false, out IReadOnlyList<string> problems);
+            ContentPack pack = ReadPack(modDirectory, PackKind.Mod, out IReadOnlyList<string> problems);
             if (problems.Count == 0 && !string.Equals(pack.Id, modId, StringComparison.Ordinal))
             {
                 problems = [$"manifest id '{pack.Id}' does not match the folder name '{modId}'"];
@@ -83,6 +94,48 @@ public static class ContentLoader
         return new ContentLoadResult(new ContentRepository(packs), issues);
     }
 
+    /// <summary>Lists the themes present on disk (folders of <c>content/themes/</c> with a manifest), sorted by id.</summary>
+    public static IReadOnlyList<string> ListThemes(string gameRoot)
+    {
+        string themes = Path.Combine(gameRoot, ContentLoadOptions.BaseFolder, ContentLoadOptions.ThemesFolder);
+        if (!Directory.Exists(themes))
+        {
+            return [];
+        }
+
+        return [.. Directory.EnumerateDirectories(themes)
+            .Where(directory => File.Exists(Path.Combine(directory, ContentLoadOptions.ManifestFile)))
+            .Select(Path.GetFileName)
+            .OfType<string>()
+            .Order(StringComparer.Ordinal)];
+    }
+
+    private static void LoadTheme(ContentLoadOptions options, List<ContentPack> packs, List<ContentIssue> issues, GameLog log)
+    {
+        string id = options.Theme!;
+        string directory = Path.Combine(options.GameRoot, ContentLoadOptions.BaseFolder, ContentLoadOptions.ThemesFolder, id);
+        if (!Directory.Exists(directory))
+        {
+            Report(issues, log, ContentIssueSeverity.Error, id, $"Theme not found: '{directory}'. Using the default look.");
+            return;
+        }
+
+        ContentPack pack = ReadPack(directory, PackKind.Theme, out IReadOnlyList<string> problems);
+        if (problems.Count == 0 && !string.Equals(pack.Id, id, StringComparison.Ordinal))
+        {
+            problems = [$"manifest id '{pack.Id}' does not match the folder name '{id}'"];
+        }
+
+        if (problems.Count > 0)
+        {
+            Report(issues, log, ContentIssueSeverity.Error, id, $"Theme rejected: {string.Join("; ", problems)}");
+            return;
+        }
+
+        packs.Add(pack);
+        log.Info("content", "Theme loaded", ("id", pack.Id), ("files", pack.Files.Count));
+    }
+
     /// <summary>Lists the mod folders present on disk (whether enabled or not), sorted by id.</summary>
     public static IReadOnlyList<string> ListInstalledMods(string gameRoot)
     {
@@ -99,7 +152,7 @@ public static class ContentLoader
             .Order(StringComparer.Ordinal)];
     }
 
-    private static ContentPack ReadPack(string directory, bool isBase, out IReadOnlyList<string> problems)
+    private static ContentPack ReadPack(string directory, PackKind kind, out IReadOnlyList<string> problems)
     {
         var found = new List<string>();
         string manifestPath = Path.Combine(directory, ContentLoadOptions.ManifestFile);
@@ -109,7 +162,8 @@ public static class ContentLoader
         foreach (string fullPath in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             string relative = Path.GetRelativePath(root, fullPath).Replace(Path.DirectorySeparatorChar, '/');
-            if (relative == ContentLoadOptions.ManifestFile || IsHidden(relative))
+            if (relative == ContentLoadOptions.ManifestFile || IsHidden(relative)
+                || (kind == PackKind.Base && relative.StartsWith(ContentLoadOptions.ThemesFolder + "/", StringComparison.Ordinal)))
             {
                 continue;
             }
@@ -123,19 +177,23 @@ public static class ContentLoader
             if (normalized.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
                 CheckJson(fullPath, normalized, found);
+                if (kind == PackKind.Theme && !ContentLoadOptions.ThemeDataFiles.Contains(normalized, StringComparer.Ordinal))
+                {
+                    found.Add($"'{normalized}' is not allowed in a theme: a theme only changes the look ({string.Join(", ", ContentLoadOptions.ThemeDataFiles)} and image or font files)");
+                }
             }
 
             files.Add(normalized);
         }
 
         files.Sort(StringComparer.Ordinal);
-        if (isBase && manifest.Id != "base")
+        if (kind == PackKind.Base && manifest.Id != "base")
         {
             found.Add($"the base content manifest id must be 'base' (found '{manifest.Id}')");
         }
 
         problems = found;
-        return new ContentPack(manifest, root, isBase, files);
+        return new ContentPack(manifest, root, kind, files);
     }
 
     private static ModManifest ReadManifest(string manifestPath, List<string> problems)

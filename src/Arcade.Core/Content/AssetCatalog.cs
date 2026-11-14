@@ -20,6 +20,12 @@ public sealed record AssetCatalog : IContentData
     [JsonRequired]
     public IReadOnlyDictionary<string, AnimationDefinition> Animations { get; init; } = new Dictionary<string, AnimationDefinition>();
 
+    /// <summary>
+    /// Engine animation states (e.g. <c>run</c>, <c>kick</c>, <c>keeper.run</c>) mapped to candidate animation ids, in
+    /// order of preference. The renderer uses the first one available and reports the missing ones.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> States { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
     public void Validate(ICollection<string> problems)
     {
         ArgumentNullException.ThrowIfNull(problems);
@@ -47,13 +53,38 @@ public sealed record AssetCatalog : IContentData
                 problems.Add($"animations.{id}.texture: unknown texture id '{animation.Texture}'");
             }
         }
+
+        foreach ((string state, IReadOnlyList<string> candidates) in States)
+        {
+            if (candidates.Count == 0)
+            {
+                problems.Add($"states.{state}: list at least one animation id");
+            }
+        }
     }
+}
+
+/// <summary>How the current frame of an animation is chosen.</summary>
+public enum AnimationDriver
+{
+    /// <summary>Distance when <see cref="AnimationDefinition.ReferenceSpeed"/> is set, otherwise time.</summary>
+    Auto,
+    Time,
+    Distance,
+
+    /// <summary>By the displayed height of the entity (ball sprites of the original game).</summary>
+    Height,
 }
 
 /// <summary>
 /// A sprite-sheet animation. The sheet is a grid of frames of <see cref="FrameWidth"/> x <see cref="FrameHeight"/> pixels.
-/// When <see cref="Directions"/> is 8, row <c>r</c> holds the frames for direction <c>r</c>
-/// (0 = up, then clockwise: up-right, right, down-right, down, down-left, left, up-left).
+/// Two layouts are supported:
+/// <list type="bullet">
+/// <item>rows (default): when <see cref="Directions"/> is 8, row <c>r</c> holds the frames for direction <c>r</c>
+/// (0 = up, then clockwise: up-right, right, down-right, down, down-left, left, up-left), and <see cref="Frames"/> are columns;</item>
+/// <item>indexed (<see cref="DirectionStride"/> &gt; 0, as in the original Kick Off 2 sheets): frames are numbered across
+/// the grid, row by row, and the frame of direction <c>d</c> is <c>frame + d × DirectionStride</c>.</item>
+/// </list>
 /// </summary>
 public sealed record AnimationDefinition : IContentData
 {
@@ -91,6 +122,17 @@ public sealed record AnimationDefinition : IContentData
     /// <summary>Optional extra display offset in pixels.</summary>
     public IReadOnlyList<int> Offset { get; init; } = [0, 0];
 
+    /// <summary>Indexed layout: frame-number offset between two directions (0 = rows layout).</summary>
+    public int DirectionStride { get; init; }
+
+    /// <summary>Indexed layout: frames per sheet row (0 = texture width / frame width).</summary>
+    public int SheetColumns { get; init; }
+
+    public AnimationDriver Driver { get; init; }
+
+    /// <summary>Height driver: displayed height in pixels per frame step.</summary>
+    public float HeightStep { get; init; } = 1f;
+
     /// <summary>
     /// Optional palette swap: marker colours (hex, e.g. "#FF0000") replaced at load time by a kit colour slot
     /// ("shirt", "shorts", "socks"), with an optional brightness factor. Lets one sheet serve every team.
@@ -117,6 +159,9 @@ public sealed record AnimationDefinition : IContentData
 
         DataChecks.Positive(problems, "frameDuration", FrameDuration);
         DataChecks.NonNegative(problems, "referenceSpeed", ReferenceSpeed);
+        DataChecks.NonNegative(problems, "directionStride", DirectionStride);
+        DataChecks.NonNegative(problems, "sheetColumns", SheetColumns);
+        DataChecks.Positive(problems, "heightStep", HeightStep);
         if (Anchor.Count != 2)
         {
             problems.Add("anchor must be [x, y]");

@@ -52,7 +52,13 @@ internal sealed class TempGameRoot : IDisposable
     public void WriteMod(string id, int formatVersion = 1, string? manifestId = null) =>
         WriteFile($"mods/{id}/manifest.json", $$"""{ "id": "{{manifestId ?? id}}", "name": "Mod {{id}}", "version": "1.0", "formatVersion": {{formatVersion}} }""");
 
+    public void WriteTheme(string id, string? manifestId = null) =>
+        WriteFile($"content/themes/{id}/manifest.json", $$"""{ "id": "{{manifestId ?? id}}", "name": "Theme {{id}}", "version": "1.0", "formatVersion": 1 }""");
+
     public ContentLoadResult Load(params string[] mods) => ContentLoader.Load(new ContentLoadOptions(Root, mods), new GameLog());
+
+    public ContentLoadResult LoadWithTheme(string theme, params string[] mods) =>
+        ContentLoader.Load(new ContentLoadOptions(Root, mods, theme), new GameLog());
 
     public void Dispose()
     {
