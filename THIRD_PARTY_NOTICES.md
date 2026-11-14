@@ -14,7 +14,13 @@ mécanismes ont été réécrits en C#, et le détail figure dans `docs/REFERENC
   horizontale) ;
 - le rayon de contact joueur–ballon (8 px) ;
 - le modèle tactique à 12 zones et 8 situations, avec la numérotation des zones et la disposition des
-  fichiers `.tac`.
+  fichiers `.tac` ;
+- pour l'apparence Classic Amiga, des faits d'affichage, réécrits sous forme de données dans
+  `content/themes/classic-amiga/` :
+  - planches de tuiles 16×16 sur 20 colonnes ;
+  - image de course `séquence[i] + 8 × direction` avec sa séquence et sa cadence ;
+  - sprites centrés sur la position ;
+  - images du ballon choisies selon la hauteur, avec l'ombre décalée de (+h, −h).
 
 ```
 MIT License
@@ -44,7 +50,10 @@ Ne sont **pas** repris :
 - les sprites, cartes de terrain et fichiers de tactiques fournis avec Open Kick-Off et le Tactical Editor : ils
   proviennent du jeu commercial et la licence MIT ne peut pas les couvrir ;
 - le code du Tactical Editor (https://github.com/ssenegas/tacticaleditor), publié sans licence. Seule la
-  description du format de fichier, un fait technique, a été utilisée.
+  description du format de fichier, un fait technique, a été utilisée ;
+- le contenu de `KONEY/ko2-gfx-restyle-adf-amiga` : ce dépôt contient des fichiers du jeu, modifiés, sans
+  licence. Seules sa documentation et ses descriptions (répartition de la palette, organisation des fichiers)
+  ont été lues. Aucun fichier n'en est tiré.
 
 ## DejaVu Sans
 

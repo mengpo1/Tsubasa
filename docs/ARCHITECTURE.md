@@ -27,14 +27,17 @@ Tsubasa.slnx
 │   ├── Rendering/        Textures (ids logiques, palette des tenues), terrain, buts, sprites
 │   ├── UI/               HUD, radar, overlay debug, polices TTF
 │   └── Scenes/           Scènes de match et d'entraînement (interface IGameScene)
-├── tests/Arcade.Tests    Tests xUnit (simulation, contrôles, données, mods, i18n, CLI)
+├── tests/Arcade.Tests    Tests xUnit (simulation, contrôles, données, mods, thèmes, importeur, i18n, CLI)
 ├── content/              Données et ressources de base (pack « base »)
+│   └── themes/           Apparences : custom, classic-amiga (images importées localement, hors Git)
 ├── mods/                 Mods installés (dont example-mod)
-├── tools/                Générateur d'art temporaire, scripts d'entrées
+├── tools/Arcade.Importer Importeur local des fichiers Amiga de l'utilisateur (sans MonoGame)
+├── tools/                Générateur d'art temporaire, scripts d'entrées, captures comparatives
 └── docs/
 ```
 
-Dépendances : `Arcade.Desktop → Arcade.Core`. Le noyau ne référence aucune bibliothèque graphique.
+Dépendances : `Arcade.Desktop → Arcade.Core`. L'importeur ne dépend de rien. Le noyau ne référence aucune
+bibliothèque graphique.
 Un test d'architecture (`ArchitectureTests`) vérifie que le noyau ne dépend pas de MonoGame et que les espaces
 génériques (`Common`, `Simulation`, `Input`, `Content`, `Localization`) n'utilisent pas le module `Football`.
 Le module football est un dossier du noyau plutôt qu'un projet séparé : une seule frontière vérifiée suffit pour
@@ -164,13 +167,28 @@ Les réglages à calibrer (niveaux, portées, timings, puissances) sont tous dan
 
 ## Rendu
 
-- Le monde est dessiné dans une cible 640×360 (pixel art), agrandie à l'entier le plus proche puis
-  centrée. Le HUD est dessiné à la résolution de la fenêtre pour que le texte reste net.
+- Le monde est dessiné dans une cible de la résolution virtuelle de l'apparence (640×360 en Custom, 320×256 en
+  Classic Amiga), agrandie d'un facteur entier au plus proche voisin puis centrée (`pixelAspect` facultatif). Le
+  HUD est dessiné à la résolution de la fenêtre pour que le texte reste net, avec une mise en page de référence
+  de 360 lignes.
 - Projection oblique : `écran = (x, y) × échelle − z × échelle × heightScale`. Toutes les faces des buts
   deviennent des rectangles alignés, ce qui simplifie le dessin. Les objets sont triés par Y au sol.
 - Les sprites sont décrits par des données (`assets.json` : grille, ancrage, directions, durée des frames).
   Les tenues sont obtenues par substitution de couleurs repères, une fois par équipe, et mises en cache.
   Une ressource manquante est signalée et remplacée par un damier magenta.
+- **Apparences** (`content/themes/<id>/`) : une couche de contenu chargée entre la base et les mods
+  (`PackKind.Theme`). Elle ne peut fournir que `assets.json`, `config/display.json` et des fichiers binaires.
+  Tout autre JSON fait rejeter le thème : il ne peut pas changer le jeu. `ContentRepository.Without(theme)`
+  donne l'apparence par défaut, utilisée pour tout ce que le thème ne fournit pas (`TextureStore.Fallback`).
+- **États d'animation** (`AnimationStateMap`, dans Core, sans dépendance graphique) : le rendu traduit l'état
+  d'un joueur en nom d'état (`run`, `keeper.hold`…), et `assets.json › states` le traduit en animation, avec une
+  chaîne de repli et un rapport des substitutions. `AnimationFrames` choisit l'image : par le temps, la distance
+  parcourue ou la hauteur affichée (ballon). Il gère aussi les planches indexées de l'original.
+- F8 recrée seulement les objets d'affichage (`ArcadeGame.ApplyVisuals`) : la scène et la simulation
+  continuent.
+- **Importeur** (`tools/Arcade.Importer`, sans MonoGame) : il lit les images disque Amiga (système de fichiers
+  de Dino Dini), les archives `.dat`, les images IFF ILBM et les cartes de terrain. Il écrit des PNG dans
+  `content/themes/classic-amiga/imported/`, un dossier ignoré par Git. Voir THEMES.md.
 - L'overlay debug (F1) affiche les rayons de contact, les vecteurs vitesse, la trajectoire prédite du ballon
   (calculée sur une copie de l'état), l'état du contrôleur, les temps de simulation et les derniers événements.
   Il ne modifie rien.

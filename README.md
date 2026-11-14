@@ -11,6 +11,10 @@ courbe avec l'aftertouch, avec un seul bouton dont le sens dépend du timing.
 - score, chronomètre, mi-temps avec changement de côté ;
 - coups d'envoi, touches, corners et six mètres.
 
+Deux **apparences** partagent exactement le même jeu : *Custom*, avec les graphismes originaux du projet, et
+*Classic Amiga*, construite sur votre machine à partir de **votre propre copie** du jeu par un importeur local.
+Aucune ressource originale n'est fournie (voir [Apparence Classic Amiga](#apparence-classic-amiga)).
+
 Il existe aussi un terrain d'entraînement pour travailler les gestes. Pas encore de tacles, de têtes, de fautes,
 de hors-jeu ni de menus (lots 3 à 5). Le détail de ce qui est implémenté est dans [docs/GAMEPLAY.md](docs/GAMEPLAY.md).
 
@@ -88,7 +92,7 @@ Après le coup de sifflet final, le bouton relance un match.
 
 Touches de l'entraînement : **R** replacer le ballon · **T** aftertouch on/off · **F3** terrain suivant ·
 **F7** langue suivante · **X** radar · **[ / ]** zoom · **P** pause · **F1** debug · **F5** recharger les données ·
-**F6** activer/désactiver les mods · **F11** plein écran · **Échap** quitter.
+**F6** activer/désactiver les mods · **F8** apparence suivante · **F11** plein écran · **Échap** quitter.
 Toutes les touches sont remappables dans `content/config/input.json`.
 
 ## Tests
@@ -118,6 +122,22 @@ Pour observer un match entier sans intervenir :
 dotnet run --project src/Arcade.Desktop -- --players 0 --debug
 ```
 
+## Apparence Classic Amiga
+
+Si vous possédez Kick Off 2 ou The Final Whistle sur Amiga, convertissez vos fichiers une fois :
+
+```bash
+dotnet run --project tools/Arcade.Importer -- --adf "KickOff2.adf" --set-default
+```
+
+L'importeur accepte aussi un second disque (`--adf` répété : Kick Off 2 puis The Final Whistle) ou des fichiers
+déjà extraits (`--files <dossier>`). Il écrit les images dans `content/themes/classic-amiga/imported/`, dossier
+exclu de Git, avec un rapport `IMPORT_REPORT.md` : ressources installées, manquantes et hypothèses à vérifier.
+
+Ensuite, `--theme classic-amiga`, `"theme"` dans `settings.json` ou **F8** en jeu. Sans import, l'apparence
+reste utilisable avec des remplacements temporaires signalés à l'écran. Détails, correspondance des animations
+et limites : [docs/THEMES.md](docs/THEMES.md).
+
 ## Mods
 
 Un mod est un dossier `mods/<id>/` avec un `manifest.json` et des fichiers qui remplacent ou complètent ceux de `content/`.
@@ -142,6 +162,7 @@ Le format complet est décrit dans [docs/MODDING.md](docs/MODDING.md).
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) : structure du code, boucle de simulation, chargement des données.
 - [docs/GAMEPLAY.md](docs/GAMEPLAY.md) : mécaniques implémentées, ce qui est documenté, estimé ou choisi.
 - [docs/MODDING.md](docs/MODDING.md) : créer un mod.
+- [docs/THEMES.md](docs/THEMES.md) : apparences, import de votre copie du jeu, animations, cadrage.
 - [docs/RESEARCH.md](docs/RESEARCH.md) : synthèse des manuels originaux et points à calibrer.
 - [docs/REFERENCE_ANALYSIS.md](docs/REFERENCE_ANALYSIS.md) : ce qui est repris d'Open Kick-Off, du format des
   tactiques, de la Competition Version et des écrits de Dino Dini.
@@ -149,6 +170,8 @@ Le format complet est décrit dans [docs/MODDING.md](docs/MODDING.md).
 
 ## Ressources et licences
 
-Tous les graphismes sont des ressources temporaires originales, générées par `tools/generate_placeholder_art.py`.
-La police DejaVu Sans est distribuée sous sa licence (`content/assets/fonts/LICENSE-DejaVu.txt`).
-Aucun sprite, son, logo ni code du jeu commercial n'est utilisé.
+Tous les graphismes du dépôt sont des ressources temporaires originales, générées par
+`tools/generate_placeholder_art.py`. La police DejaVu Sans est distribuée sous sa licence
+(`content/assets/fonts/LICENSE-DejaVu.txt`). Le dépôt ne contient aucun sprite, son, logo ni code du jeu
+commercial. L'apparence Classic Amiga n'utilise que des fichiers convertis sur votre machine, à partir de votre
+copie, pour un usage personnel. Ils sont exclus de Git et ne doivent pas être partagés.

@@ -216,6 +216,8 @@ Choix d'interprétation à noter :
 - Vue : 640×360 pixels virtuels à 16 px/m, soit environ 40 × 22 m visibles. L'original, en 320 pixels de large à
   12 px/yard, montre environ 24 × 15 m. Le cadrage plus large est un [Choix] pour l'écran 16:9 ; le zoom se règle
   avec **[ ]**.
+- Apparence Classic Amiga : 320×256 à 13,1234 px/m, environ 24 × 19,5 m visibles [Reconstitué]. Le jeu est
+  identique dans les deux apparences ; seuls l'image et le cadrage changent (voir THEMES.md).
 - Radar (scanner) : terrain miniature avec joueurs, ballon et zone visible [KO2 : scanner].
 - Tableau : score et minute de jeu en match ; équipe, buts et chronomètre en entraînement.
 - Bandeaux : coup d'envoi, touche, corner, six mètres, but (avec le buteur), mi-temps, fin du match.

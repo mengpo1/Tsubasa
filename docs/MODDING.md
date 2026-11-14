@@ -130,6 +130,12 @@ Un fichier absent ou un id inconnu est signalé dans le journal et remplacé par
   `socks`), avec un facteur de luminosité. Une seule planche sert à toutes les équipes.
 - Animations utilisées : `player.idle`, `player.run`, `player.kick`, `ball.roll`.
 
+### Apparences
+
+Une apparence (`content/themes/<id>/`) est un pack réservé au visuel : `assets.json`, `config/display.json` et
+des images ou polices, rien d'autre. Elle se charge après la base et avant les mods. Un mod peut donc encore
+la modifier. Voir [THEMES.md](THEMES.md).
+
 ## Équipes
 
 ```json

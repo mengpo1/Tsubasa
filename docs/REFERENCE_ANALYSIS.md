@@ -15,6 +15,7 @@ et ce que le projet en a fait.
 | **B. Tactical Editor** (`ssenegas/tacticaleditor`) | Lecteur et éditeur des fichiers `.tac` originaux | **Aucune licence** : code non réutilisé. Seul le format de fichier, un fait technique, sert de référence. Ses `.tac` sont des fichiers originaux : non repris |
 | **C. KO2 Competition Version** (wiki.kickoff2.com, KOA, ko2wc.com) | Notes de version, règles de tournoi, extraits de désassemblage publiés par la communauté | Informations sur des comportements ; aucun binaire utilisé |
 | **D. Manuels** KO2 et Final Whistle, **blog de Dino Dini** | Règles et commandes ; déclarations de l'auteur | Les sources originales retrouvées par Dini (2011) ne sont pas publiques : traitées comme propriétaires |
+| **E. KONEY** (`KONEY/ko2-gfx-restyle-adf-amiga`) | Refonte graphique de KO2 : fichiers du jeu modifiés et notes | **Aucune licence**, et le dépôt contient des fichiers du jeu : seules les notes ont été lues (palette, organisation). Rien n'est repris |
 
 Sources injoignables : forum ko-gathering (403), web.archive.org, transcription de la conférence GDC 2013. La
 vidéo Amiga n'a pas pu être visionnée dans cet environnement.
@@ -52,6 +53,22 @@ vidéo Amiga n'a pas pu être visionnée dans cet environnement.
 - **Hauteur à l'écran** : `Ball.render()` monte le ballon de la moitié de son altitude ; nous projetons les
   hauteurs à 0,5.
 
+## Graphismes (apparence Classic Amiga)
+
+| Élément | Source étudiée | État de la référence | Adaptation C# |
+|---|---|---|---|
+| Disque et archives | C : wiki KOA, *Dino Dini File System* ; structure vérifiée sur les en-têtes | **Reconstitué** : table à l'octet 0x400 ; entrées de 16 octets (nom de 12 octets, 12 bits de bloc et 20 bits de taille). Les archives `.dat` ont une table de 16 octets par membre, avec des décalages relatifs | `tools/Arcade.Importer` : `DdfsDisk`, `DatArchive`. Un disque d'un autre format est signalé, et l'option `--files` le contourne |
+| Images | Spécification IFF ILBM (EA 85, Commodore) | **Confirmé** (format public) : BMHD, CMAP, BODY en plans entrelacés, ByteRun1, masque | `IlbmImage`. Palettes 4 bits étendues à 8 bits. HAM et EHB refusés explicitement |
+| Planches de sprites | A : `Player.java`, `Ball.java` ; en-têtes des fichiers du joueur | **Reconstitué** : tuiles 16×16 sur 20 colonnes, sprite centré sur la position. Planches de 320×161 (une ligne de plus que la grille) | Disposition indexée (`directionStride`, `sheetColumns`). La grille est recadrée et sa position notée dans le rapport |
+| Course | A : `Player.java` (`runningFrameAnimationSequence`, `maxFrameTime = 5 / SPEED`) | **Reconstitué** : tuile `séquence[i] + 8 × direction`, directions N, NE, E… NW, une image tous les 5 px | `classic.run`, pilotée par la distance : 11,4 m/s × 0,0333 s |
+| Ballon et ombre | A : `Ball.render()` | **Reconstitué** : ballon dessiné à h = z/2 au-dessus du sol. Au ras du sol, tuiles 0–3, ombre comprise. En l'air, tuiles 4–7 (`min(3, z/32)`) et ombre (tuile 8) décalée de (+h, −h) | Pilotage par la hauteur affichée (`driver: height`) ; `ballShadowShift` |
+| Palette des sprites | E : notes de KONEY | **Approximatif** : 16 couleurs, 8 pour le terrain et 8 pour les sprites (0 transparent, 1 cheveux, 2 peau, 3 et 4 couleurs principales des équipes A et B, 5 secondaire et ballon, 6 gardien, 7 ombre) | Indices 3 et 4 → repère maillot, 5 → repère short, recoloriés par équipe |
+| Terrains | C : wiki KOA ; A : `MatchScreen` (image de 1280×1536 px) ; structure des fichiers `pdat.*` | **Reconstitué** : carte de 80×96 tuiles de 16 px (en-tête 0x0050 0x0060 puis un octet par tuile) et jeux de tuiles `fbgraph4.*` en 8 couleurs. Lignes sur 912×1392 px à partir de (176, 64) | `PitchComposer`. Image placée par `pitchBitmap` (centre en (632, 760), 13,1234 px/m), alignée sur la géométrie du jeu |
+| Résolution | En-tête de l'image `title` (320×256, 5 plans) | **Reconstitué** : mode PAL basse résolution. La zone de jeu en match n'est pas vérifiée | Apparence en 320×256, agrandissement entier, `pixelAspect` facultatif |
+| Autres animations, polices, tableau de score, menus | — | **Non établi** | Remplacements signalés ; planches contact numérotées pour les identifier à partir des fichiers de l'utilisateur |
+
+Aucune comparaison au pixel près avec l'original n'a été faite : la fidélité au pixel n'est pas revendiquée.
+
 ## Différences entre KO2, Final Whistle et Competition Version
 
 | Sujet | KO2 (v1.4) | Final Whistle | Competition Version et tournois | Dans le projet |
@@ -75,6 +92,7 @@ Déjà appliqué :
 2. Constantes reconstituées : vitesse de course, formule de dribble, rebonds, rayon de contact, terrain de
    76 × 116 yards, caméra centrée sur le ballon, projection des hauteurs à 0,5.
 3. PBD, ordinateur seul par défaut.
+4. Apparence Classic Amiga, construite par un importeur local à partir de la copie du joueur (THEMES.md).
 
 Programme du **lot 3**, orienté par ces conclusions :
 1. Règle d'origine du bouton sur ballon libre : glissade au sol, tête en l'air. L'amorti n'est possible qu'en
