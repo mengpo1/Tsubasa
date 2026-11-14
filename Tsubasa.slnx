@@ -3,6 +3,9 @@
     <Project Path="src/Arcade.Core/Arcade.Core.csproj" />
     <Project Path="src/Arcade.Desktop/Arcade.Desktop.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Arcade.Importer/Arcade.Importer.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Arcade.Tests/Arcade.Tests.csproj" />
   </Folder>

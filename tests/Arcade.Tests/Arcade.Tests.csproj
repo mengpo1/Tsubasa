@@ -17,5 +17,7 @@
     <ProjectReference Include="..\..\src\Arcade.Core\Arcade.Core.csproj" />
     <!-- Only for the desktop data/CLI tests: no window is ever created by the tests. -->
     <ProjectReference Include="..\..\src\Arcade.Desktop\Arcade.Desktop.csproj" />
+    <!-- Importer of the user's own original files: tested with synthetic data only. -->
+    <ProjectReference Include="..\..\tools\Arcade.Importer\Arcade.Importer.csproj" />
   </ItemGroup>
 </Project>
